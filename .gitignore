@@ -1,0 +1,27 @@
+# Secrets — NUNCA commitear
+.env
+.env.local
+.env.*.local
+*.pem
+*.rsa
+id_rsa*
+*.key
+
+# Airflow runtime
+airflow/logs/
+airflow/dags/__pycache__/
+airflow/plugins/__pycache__/
+*.pyc
+*.pyo
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
