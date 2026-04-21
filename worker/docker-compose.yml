@@ -1,31 +1,51 @@
 services:
+
+  git-sync:
+    image: registry.k8s.io/git-sync/git-sync:v4.2.1
+    container_name: airflow-git-sync
+    user: "0:0"
+    environment:
+      GITSYNC_REPO: ${GIT_REPO_URL}
+      GITSYNC_BRANCH: ${GIT_BRANCH:-main}
+      GITSYNC_ROOT: /git
+      GITSYNC_LINK: current
+      GITSYNC_PERIOD: ${GIT_SYNC_PERIOD:-60s}
+      GITSYNC_DEPTH: 1
+    volumes:
+      - dags-volume:/git
+    restart: always
+
   worker:
     image: apache/airflow:3.2.0
     container_name: airflow-worker
     command: celery worker
     environment:
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://10.0.1.154:8080/execution/
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
-      AIRFLOW__CELERY__RESULT_BACKEND: ${AIRFLOW__CELERY__RESULT_BACKEND}
-      AIRFLOW__CELERY__BROKER_URL: ${AIRFLOW__CELERY__BROKER_URL}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_PASSWORD}@${AIRFLOW_MASTER_PRIVATE_IP}:5432/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:${POSTGRES_PASSWORD}@${AIRFLOW_MASTER_PRIVATE_IP}:5432/airflow
+      AIRFLOW__CELERY__BROKER_URL: amqp://admin:${RABBITMQ_PASSWORD}@${RABBITMQ_PRIVATE_IP}:5672/
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+      AIRFLOW__API__SECRET_KEY: ${AIRFLOW__API__SECRET_KEY}
+      AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-      AIRFLOW__CELERY__WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: ${AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS}
+      AIRFLOW__CELERY__WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+      AIRFLOW__DAG_PROCESSOR__DAG_BUNDLE_CONFIG_LIST: >-
+        [{"name": "dags-folder", "classpath": "airflow.dag_processing.bundles.local.LocalDagBundle", "kwargs": {"path": "/opt/airflow/dags/current/airflow/dags", "refresh_interval": 60}}]
       DUMB_INIT_SETSID: "0"
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      CSV_PATH: /opt/airflow/data/new_data/sales_data_sample.csv
+      _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     volumes:
-      - ../airflow/dags:/opt/airflow/dags
-      - ../scripts:/opt/airflow/scripts
-      - ../data:/opt/airflow/data
-      - ../sql:/opt/airflow/sql
-      - ../outputs:/opt/airflow/outputs
-      - ../airflow/logs:/opt/airflow/logs
+      - dags-volume:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ~/pipeline/data:/opt/airflow/data 
+      - ./config:/opt/airflow/config
     user: "${AIRFLOW_UID:-50000}:0"
     restart: always
+    depends_on:
+      git-sync:
+        condition: service_started
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -34,3 +54,6 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+volumes:
+  dags-volume:
