@@ -27,7 +27,7 @@ TRANSFORMED_PATH = "/tmp/transformed_sales.parquet"
 def retailco_pipeline():
     @task(task_id="t1_extraer")
     def t1_extraer() -> str:
-        ruta = os.getenv("CSV_PATH", "/opt/airflow/data/new_data/sales_data_sample.csv")
+        ruta = os.getenv("CSV_PATH", "/opt/airflow/data/sales_data_sample.csv")
         df = extraer(ruta)
         df.to_parquet(RAW_PATH, index=False)
         return RAW_PATH
