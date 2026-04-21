@@ -32,6 +32,8 @@ services:
   postgres:
     image: postgres:16
     container_name: airflow-postgres
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -181,3 +183,4 @@ services:
 # Volumes
 # =============================================================================
 volumes:
+   postgres-db-volume:
