@@ -7,7 +7,7 @@ from datetime import datetime
 import pandas as pd
 from airflow.sdk import dag, task
 
-sys.path.insert(0, "/opt/airflow/scripts")
+sys.path.insert(0, "/opt/airflow/dags/")
 
 from pipeline import build_connection, cargar, extraer, transformar
 
