@@ -47,7 +47,7 @@ def build_connection():
 
 
 def extraer(ruta: str) -> pd.DataFrame:
-    return pd.read_csv(ruta)
+    return pd.read_csv(ruta, encoding='latin-1')
 
 
 def transformar(df: pd.DataFrame) -> pd.DataFrame:
