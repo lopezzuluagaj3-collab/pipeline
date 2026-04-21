@@ -1,27 +1,25 @@
-# Secrets — NUNCA commitear
+# Entornos y secretos
+.venv/
+venv/
+env/
 .env
-.env.local
-.env.*.local
-*.pem
-*.rsa
-id_rsa*
-*.key
+.env.*
+!.env.example
+!worker/.env.example
+lib/
+lib64/
+bin/
+include/
+pyvenv.cfg
+.lock
+CACHEDIR.TAG
 
-# Airflow runtime
-airflow/logs/
-airflow/dags/__pycache__/
-airflow/plugins/__pycache__/
+# Python
+__pycache__/
 *.pyc
-*.pyo
+airflow/dags/__pycache__/
+scripts/__pycache__/
 
-# Docker
-.docker/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# IDEs
-.vscode/
-.idea/
-*.swp
+# Datos y salidas
+data/
+outputs/

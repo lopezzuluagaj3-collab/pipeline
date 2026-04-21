@@ -1,29 +1,29 @@
 services:
-
   worker:
     image: apache/airflow:3.2.0
     container_name: airflow-worker
     command: celery worker
     environment:
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      # Postgres del EC2 master (IP privada)
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_PASSWORD}@${AIRFLOW_MASTER_PRIVATE_IP}:5432/>
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:${POSTGRES_PASSWORD}@${AIRFLOW_MASTER_PRIVATE_IP}:5432/airflow
-      # RabbitMQ (IP privada)
-      AIRFLOW__CELERY__BROKER_URL: amqp://admin:${RABBITMQ_PASSWORD}@${RABBITMQ_PRIVATE_IP}:5672/
-      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
-      AIRFLOW__API__SECRET_KEY: ${AIRFLOW__API__SECRET_KEY}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
+      AIRFLOW__CELERY__RESULT_BACKEND: ${AIRFLOW__CELERY__RESULT_BACKEND}
+      AIRFLOW__CELERY__BROKER_URL: ${AIRFLOW__CELERY__BROKER_URL}
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: ${AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS}
-      # Importante: mismo valor que el master para que descifre correctamente
-      AIRFLOW__CELERY__WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+      AIRFLOW__CELERY__WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
       DUMB_INIT_SETSID: "0"
-      _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      CSV_PATH: /opt/airflow/data/new_data/sales_data_sample.csv
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./plugins:/opt/airflow/plugins
-      - ./config:/opt/airflow/config
+      - ../airflow/dags:/opt/airflow/dags
+      - ../scripts:/opt/airflow/scripts
+      - ../data:/opt/airflow/data
+      - ../sql:/opt/airflow/sql
+      - ../outputs:/opt/airflow/outputs
+      - ../airflow/logs:/opt/airflow/logs
     user: "${AIRFLOW_UID:-50000}:0"
     restart: always
     healthcheck:
