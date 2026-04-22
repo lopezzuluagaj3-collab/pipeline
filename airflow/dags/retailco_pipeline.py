@@ -13,11 +13,10 @@ sys.path.insert(0, "/opt/airflow/dags/current/airflow/dags/")
 from pipeline import build_connection, cargar, extraer, transformar
 
 
-RAW_PATH = "/tmp/raw_sales.parquet"
-TRANSFORMED_PATH = "/tmp/transformed_sales.parquet"
+RAW_PATH = "/opt/airflow/data/raw_sales.parquet"
+TRANSFORMED_PATH = "/opt/airflow/data/transformed_sales.parquet"
 
-
-@dag(
+dag(
     dag_id="retailco_pipeline",
     start_date=datetime(2024, 1, 1),
     schedule=None,
