@@ -16,20 +16,20 @@ from pipeline import build_connection, cargar, extraer, transformar
     tags=["retailco", "etl"],
 )
 def retailco_pipeline():
-    @task(task_id="t1_extraer")
-    def t1_extraer() -> list:
+    @task(task_id="t1_extraer", multiple_outputs=False)
+    def t1_extraer() :
         ruta = os.getenv("CSV_PATH", "/opt/airflow/data/sales_data_sample.csv")
         df = extraer(ruta)
         return df.to_dict(orient="records")
 
-    @task(task_id="t2_transformar")
-    def t2_transformar(raw_data: list) -> list:
+    @task(task_id="t2_transformar", multiple_outputs=False)
+    def t2_transformar(raw_data)
         df = pd.DataFrame(raw_data)
         transformed = transformar(df)
         return transformed.to_dict(orient="records")
 
-    @task(task_id="t3_cargar")
-    def t3_cargar(transformed_data: list) -> None:
+    @task(task_id="t3_cargar", multiple_outputs=False)
+    def t3_cargar(transformed_data):
         df = pd.DataFrame(transformed_data)
         with build_connection() as conn:
             cargar(df, conn)
