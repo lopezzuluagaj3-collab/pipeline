@@ -17,13 +17,13 @@ from pipeline import build_connection, cargar, extraer, transformar
 )
 def retailco_pipeline():
     @task(task_id="t1_extraer", multiple_outputs=False)
-    def t1_extraer() :
+    def t1_extraer():
         ruta = os.getenv("CSV_PATH", "/opt/airflow/data/sales_data_sample.csv")
         df = extraer(ruta)
         return df.to_dict(orient="records")
 
     @task(task_id="t2_transformar", multiple_outputs=False)
-    def t2_transformar(raw_data)
+    def t2_transformar(raw_data):
         df = pd.DataFrame(raw_data)
         transformed = transformar(df)
         return transformed.to_dict(orient="records")
