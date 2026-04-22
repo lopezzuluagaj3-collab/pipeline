@@ -15,7 +15,6 @@ T1_OUTPUT = os.path.join(DATA_DIR, "t1_raw.json")
 T2_OUTPUT = os.path.join(DATA_DIR, "t2_transformed.json")
 
 def _df_to_json(df: pd.DataFrame, path: str) -> None:
-    """Serializa DataFrame a JSON limpiando NaN → None."""
     records = df.to_dict(orient="records")
     clean = [
         {k: (None if isinstance(v, float) and math.isnan(v) else v) for k, v in row.items()}
@@ -25,7 +24,6 @@ def _df_to_json(df: pd.DataFrame, path: str) -> None:
         json.dump(clean, f)
 
 def _json_to_df(path: str) -> pd.DataFrame:
-    """Lee JSON desde disco y retorna DataFrame."""
     with open(path, "r", encoding="utf-8") as f:
         return pd.DataFrame(json.load(f))
 
@@ -43,14 +41,14 @@ def retailco_pipeline():
         ruta = os.getenv("CSV_PATH", "/opt/airflow/data/sales_data_sample.csv")
         df = extraer(ruta)
         _df_to_json(df, T1_OUTPUT)
-        return T1_OUTPUT  # XCom lleva solo la ruta (~30 bytes)
+        return T1_OUTPUT
 
     @task(task_id="t2_transformar", multiple_outputs=False)
     def t2_transformar(t1_path: str) -> str:
         df = _json_to_df(t1_path)
         transformed = transformar(df)
         _df_to_json(transformed, T2_OUTPUT)
-        return T2_OUTPUT  # XCom lleva solo la ruta (~35 bytes)
+        return T2_OUTPUT
 
     @task(task_id="t3_cargar", multiple_outputs=False)
     def t3_cargar(t2_path: str) -> None:
