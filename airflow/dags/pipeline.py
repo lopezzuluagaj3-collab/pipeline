@@ -81,7 +81,7 @@ def cargar(df: pd.DataFrame, conn) -> None:
     if df.empty:
         return
 
-    schema_path = Path(__file__).resolve().parents[1] / "sql" / "schema.sql"
+    schema_path = Path(__file__).resolve().parent / "sql" / "schema.sql"
     conn.execute(text(schema_path.read_text(encoding="utf-8")))
 
     fechas = (
