@@ -48,6 +48,9 @@ def retailco_pipeline():
     @task(task_id="t3_cargar", multiple_outputs=False)
     def t3_cargar(transformed_data):
         df = pd.DataFrame(transformed_data)
+        # Restaurar tipos datetime que fueron serializados como string en XCom
+        if "orderdate" in df.columns:
+            df["orderdate"] = pd.to_datetime(df["orderdate"])
         with build_connection() as conn:
             cargar(df, conn)
 
