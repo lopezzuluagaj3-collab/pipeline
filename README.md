@@ -106,7 +106,7 @@ Variables requeridas en el master:
 POSTGRES_PASSWORD=tu_password
 
 # Broker
-AIRFLOW__CELERY__BROKER_URL=amqp://admin:password@10.0.2.87:5672/
+AIRFLOW__CELERY__BROKER_URL=amqp://admin:password@IP_RabbitMQ:5672/
 
 # Seguridad
 AIRFLOW__CORE__FERNET_KEY=tu_fernet_key
