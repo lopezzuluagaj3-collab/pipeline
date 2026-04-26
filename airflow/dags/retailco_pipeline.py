@@ -48,7 +48,7 @@ def retailco_pipeline():
     @task(task_id="t1_extraer")
     def t1_extraer(**context) -> str:
         bucket = os.getenv("S3_BUCKET", "bucket-pipeline-1.0")
-        key = "new data/sales_data_sample.csv"
+        key = "logs/new data/sales_data_sample.csv"
         run_id = context["run_id"].replace(":", "-").replace("+", "-")
 
         df = _read_csv_from_s3(bucket, key)
@@ -88,7 +88,7 @@ def retailco_pipeline():
             cargar(df, conn)
 
         # Guarda CSV limpio en clean data/
-        _write_csv_to_s3(df, bucket, "clean data/sales_data_clean.csv")
+        _write_csv_to_s3(df, bucket, "logs/clean data/sales_data_clean.csv")
 
     t1 = t1_extraer()
     t2 = t2_transformar(t1)
