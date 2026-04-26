@@ -31,6 +31,16 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: ${AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS}
       AIRFLOW__CELERY__WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+      AIRFLOW__CORE__MAX_MAP_LENGTH: '10000'
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      AIRFLOW__LOGGING__REMOTE_LOGGING: 'true'
+      AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: 's3://bucket-pipeline-1.0/logs'
+      AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: 'aws_default'
+      AIRFLOW__LOGGING__ENCRYPT_S3_LOGS: 'false'
       AIRFLOW__DAG_PROCESSOR__DAG_BUNDLE_CONFIG_LIST: >-
         [{"name": "dags-folder", "classpath": "airflow.dag_processing.bundles.local.LocalDagBundle", "kwargs": {"path": "/opt/airflow/dags/current/airflow/dags", "refresh_interval": 60}}]
       DUMB_INIT_SETSID: "0"
