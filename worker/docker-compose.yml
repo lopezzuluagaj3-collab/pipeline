@@ -18,41 +18,44 @@ services:
   worker:
     image: apache/airflow:3.2.0
     container_name: airflow-worker
-    command: celery worker
+    command: celery worker -q ${QUEUES:-celery} -H ${CELERY_HOSTNAME:-worker}@%h
     environment:
-      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://ip_master:8080/execution/
+      # --- Core ---
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_PASSWORD}@${AIRFLOW_MASTER_PRIVATE_IP}:5432/airflow
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:${POSTGRES_PASSWORD}@${AIRFLOW_MASTER_PRIVATE_IP}:5432/airflow
-      AIRFLOW__CELERY__BROKER_URL: amqp://admin:${RABBITMQ_PASSWORD}@${RABBITMQ_PRIVATE_IP}:5672/
       AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__CORE__MAX_MAP_LENGTH: '10000'
+      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: ${AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS}
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: ${AIRFLOW__CORE__EXECUTION_API_SERVER_URL}
+      # --- Base de datos ---
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}
+      # --- Celery ---
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}
+      AIRFLOW__CELERY__BROKER_URL: ${AIRFLOW__CELERY__BROKER_URL}
+      AIRFLOW__CELERY__WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+      # --- API / Auth ---
       AIRFLOW__API__SECRET_KEY: ${AIRFLOW__API__SECRET_KEY}
       AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET}
-      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-      AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: ${AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS}
-      AIRFLOW__CELERY__WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
-      AIRFLOW__CORE__MAX_MAP_LENGTH: '10000'
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER}
+      # --- DAG bundle ---
+      AIRFLOW__DAG_PROCESSOR__DAG_BUNDLE_CONFIG_LIST: >-
+        [{"name": "dags-folder", "classpath": "airflow.dag_processing.bundles.local.LocalDagBundle", "kwargs": {"path": "/opt/airflow/dags/current/pipelines/dags", "refresh_interval": 60}}]
+      # --- Logging S3 ---
       AIRFLOW__LOGGING__REMOTE_LOGGING: 'true'
-      AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: 's3://nombre_buket/logs'
-      AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: 'aws_default'
+      AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: ${AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER}
+      AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: aws_default
+      AIRFLOW__LOGGING__ENCRYPT_S3_LOGS: 'false'
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
-      AIRFLOW__LOGGING__ENCRYPT_S3_LOGS: 'false'
-      AIRFLOW__DAG_PROCESSOR__DAG_BUNDLE_CONFIG_LIST: >-
-        [{"name": "dags-folder", "classpath": "airflow.dag_processing.bundles.local.LocalDagBundle", "kwargs": {"path": "/opt/airflow/dags/current/airflow/dags", "refresh_interval": 60}}]
+      # --- Misc ---
       DUMB_INIT_SETSID: "0"
+      _AIRFLOW_DB_MIGRATE: 'false'
       _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     volumes:
       - dags-volume:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-      - ~/pipeline/data:/opt/airflow/data 
       - ./config:/opt/airflow/config
     user: "${AIRFLOW_UID:-50000}:0"
     restart: always
