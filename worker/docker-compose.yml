@@ -20,7 +20,7 @@ services:
     container_name: airflow-worker
     command: celery worker
     environment:
-      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://10.0.1.154:8080/execution/
+      AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://ip_master:8080/execution/
       AIRFLOW__CORE__EXECUTOR: CeleryExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_PASSWORD}@${AIRFLOW_MASTER_PRIVATE_IP}:5432/airflow
       AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:${POSTGRES_PASSWORD}@${AIRFLOW_MASTER_PRIVATE_IP}:5432/airflow
@@ -38,8 +38,11 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       AIRFLOW__LOGGING__REMOTE_LOGGING: 'true'
-      AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: 's3://bucket-pipeline-1.0/logs'
+      AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: 's3://nombre_buket/logs'
       AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: 'aws_default'
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
       AIRFLOW__LOGGING__ENCRYPT_S3_LOGS: 'false'
       AIRFLOW__DAG_PROCESSOR__DAG_BUNDLE_CONFIG_LIST: >-
         [{"name": "dags-folder", "classpath": "airflow.dag_processing.bundles.local.LocalDagBundle", "kwargs": {"path": "/opt/airflow/dags/current/airflow/dags", "refresh_interval": 60}}]
