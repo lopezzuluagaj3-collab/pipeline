@@ -1,6 +1,7 @@
 x-airflow-common: &airflow-common
   image: apache/airflow:3.2.0
   environment: &airflow-common-env
+    PYTHONPATH: /opt/airflow/pipelines
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}
@@ -26,7 +27,8 @@ x-airflow-common: &airflow-common
     S3_BUCKET: ${S3_BUCKET}
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
   volumes:
-    - ../airflow/dags:/opt/airflow/dags
+    - ../pipelines:/opt/airflow/pipelines
+    - ../pipelines/dags:/opt/airflow/dags
     - ../airflow/logs:/opt/airflow/logs
     - ../airflow/plugins:/opt/airflow/plugins
     - ../airflow/config:/opt/airflow/config
