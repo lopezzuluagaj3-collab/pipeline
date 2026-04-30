@@ -1,7 +1,7 @@
 from airflow.decorators import task
 import socket
 
-@task(queue="test1")
+@task(queue="celery")
 def get_server_info():
     hostname = socket.gethostname()
     ip = socket.gethostbyname(hostname)
