@@ -1,25 +1,53 @@
-# Entornos y secretos
+# Entornos virtuales
 .venv/
 venv/
 env/
+ENV/
+
+# Secretos y configuracion local
 .env
 .env.*
 !.env.example
 !worker/.env.example
-lib/
-lib64/
-bin/
-include/
-pyvenv.cfg
-.lock
-CACHEDIR.TAG
 
 # Python
 __pycache__/
-*.pyc
-airflow/dags/__pycache__/
-scripts/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Datos y salidas
+# Artefactos de build/cache
+build/
+dist/
+*.egg-info/
+.cache/
+CACHEDIR.TAG
+
+# Airflow local
+airflow.db
+airflow.cfg
+logs/
+standalone_admin_password.txt
+webserver_config.py
+
+# Datos locales y salidas generadas
 data/
+output/
 outputs/
+*.csv
+*.parquet
+*.jsonl
+*.xlsx
+
+# Mantener ejemplos versionables si se agregan despues
+!data/.gitkeep
+!output/.gitkeep
+!outputs/.gitkeep
+
+# Sistema operativo / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -3,9 +3,11 @@ name = "retailco-analysis"
 version = "0.1.0"
 description = "Prueba tecnica de analisis de datos y pipeline ETL para RetailCo."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 dependencies = [
   "apache-airflow>=3.0,<4.0",
+  "apache-airflow-providers-amazon>=9.0,<10.0",
+  "matplotlib>=3.8,<4.0",
   "pandas>=2.2,<3.0",
   "psycopg2-binary>=2.9,<3.0",
   "pyarrow>=16.0,<20.0",
