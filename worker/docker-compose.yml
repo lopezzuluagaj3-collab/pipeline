@@ -5,6 +5,13 @@ services:
     user: "0:0"
     env_file:
       - .env
+    environment:
+      GITSYNC_REPO: ${GIT_REPO_URL}
+      GITSYNC_BRANCH: ${GIT_BRANCH:-main}
+      GITSYNC_ROOT: /git
+      GITSYNC_LINK: current
+      GITSYNC_PERIOD: ${GIT_SYNC_PERIOD:-60s}
+      GITSYNC_DEPTH: 1
     volumes:
       - dags-volume:/git
     restart: always
@@ -35,3 +42,4 @@ services:
       start_period: 30s
 
 volumes:
+   dags-volume:
