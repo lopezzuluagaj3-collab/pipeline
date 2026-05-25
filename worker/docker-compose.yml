@@ -27,6 +27,7 @@ services:
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
       - ./config:/opt/airflow/config
+      - /home/ubuntu/.ssh:/opt/airflow/.ssh:ro
     user: "${AIRFLOW_UID:-50000}:0"
     restart: always
     depends_on:
