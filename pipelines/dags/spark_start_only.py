@@ -4,11 +4,6 @@ from datetime import datetime
 import boto3
 import os
 
-# ─── CONFIGURACIÓN DESDE .env ─────────────────────────────────────────────────
-
-SPARK_ROLE_ARN = os.environ["SPARK_ROLE_ARN"]
-SPARK_REGION   = os.environ["SPARK_REGION"]
-
 SPARK_INSTANCE_IDS = [
     "i-0dc6390f17528d2f2",  # SVR-MASTER-SPARK
     "i-013fe65f5dfb3a615",  # SVR-WORKER-SPARK-2
@@ -27,14 +22,18 @@ SPARK_INSTANCE_IDS = [
 # ─── HELPER ───────────────────────────────────────────────────────────────────
 
 def get_ec2_client():
+    # Las variables se leen aqui, no en el modulo
+    spark_role_arn = os.environ["SPARK_ROLE_ARN"]
+    spark_region   = os.environ["SPARK_REGION"]
+
     sts = boto3.client("sts")
     creds = sts.assume_role(
-        RoleArn=SPARK_ROLE_ARN,
+        RoleArn=spark_role_arn,
         RoleSessionName="airflow-spark-session"
     )["Credentials"]
     return boto3.client(
         "ec2",
-        region_name=SPARK_REGION,
+        region_name=spark_region,
         aws_access_key_id=creds["AccessKeyId"],
         aws_secret_access_key=creds["SecretAccessKey"],
         aws_session_token=creds["SessionToken"]
