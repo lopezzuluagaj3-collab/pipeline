@@ -86,11 +86,11 @@ with DAG(
         run = BashOperator(
             task_id=f'stg_green_{anio}_{mes:02d}',
             bash_command=(
-                f'dbt run '
+                f'/home/airflow/.local/bin/dbt run '
                 f'--select {MODELO} '
                 f'--vars \'{{"anio": {anio}, "mes": {mes}}}\' '
                 f'--profiles-dir /opt/airflow/.dbt '
-                f'--project-dir /opt/airflow/sirius_project '
+                f'--project-dir /opt/airflow/dags/current/pipelines/data_transformation '
             ),
             retries=2,
             retry_delay=timedelta(minutes=5),
