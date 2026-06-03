@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import ShortCircuitOperator
-from airflow.utils.dates import days_ago
+from datetime import datetime, timedelta, timezone
 from datetime import datetime, timedelta
 import boto3
 
@@ -64,7 +64,7 @@ with DAG(
     default_args=default_args,
     description='FHV staging mes a mes con skip si ya fue procesado',
     schedule_interval=None,
-    start_date=days_ago(1),
+    start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
     catchup=False,
     tags=['fhv', 'staging', 'dbt'],
 ) as dag:

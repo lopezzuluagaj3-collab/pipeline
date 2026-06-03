@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.sensors.external_task import ExternalTaskSensor
-from airflow.utils.dates import days_ago
+from datetime import datetime, timedelta, timezone
 from datetime import timedelta
 
 
@@ -16,7 +16,7 @@ with DAG(
     default_args=default_args,
     description='Orquestador: dispara fhv → yellow → green → hvfhv secuencialmente',
     schedule_interval=None,
-    start_date=days_ago(1),
+    start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
     catchup=False,
     tags=['maestro', 'staging'],
 ) as dag:
