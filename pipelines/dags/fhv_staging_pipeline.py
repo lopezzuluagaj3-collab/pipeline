@@ -66,6 +66,7 @@ with DAG(
     schedule=None,
     start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
     catchup=False,
+    max_active_tasks=1,  
     tags=['fhv', 'staging', 'dbt'],
 ) as dag:
 
