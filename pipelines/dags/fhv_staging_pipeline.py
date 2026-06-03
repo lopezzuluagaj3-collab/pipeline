@@ -86,7 +86,7 @@ with DAG(
         run = BashOperator(
             task_id=f'stg_fhv_{anio}_{mes:02d}',
             bash_command=(
-                f'dbt run '
+                f'/home/airflow/.local/bin/dbt run '
                 f'--select {MODELO} '
                 f'--vars \'{{"anio": {anio}, "mes": {mes}}}\' '
                 f'--profiles-dir /opt/airflow/.dbt '
