@@ -63,7 +63,7 @@ with DAG(
     dag_id='hvfhs_staging_pipeline',
     default_args=default_args,
     description='HVFHS staging mes a mes con skip si ya fue procesado',
-    schedule_interval=None,
+    schedule=None,
     start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
     catchup=False,
     tags=['hvfhs', 'staging', 'dbt'],

@@ -15,7 +15,7 @@ with DAG(
     dag_id='maestro_staging_pipeline',
     default_args=default_args,
     description='Orquestador: dispara fhv → yellow → green → hvfhv secuencialmente',
-    schedule_interval=None,
+    schedule=None,
     start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
     catchup=False,
     tags=['maestro', 'staging'],
