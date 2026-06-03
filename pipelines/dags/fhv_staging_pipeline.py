@@ -85,13 +85,7 @@ with DAG(
         # ── Task 2: correr dbt solo si no existe ──
         run = BashOperator(
             task_id=f'stg_fhv_{anio}_{mes:02d}',
-            bash_command=(
-                f'/home/airflow/.local/bin/dbt run '
-                f'--select {MODELO} '
-                f'--vars \'{{"anio": {anio}, "mes": {mes}}}\' '
-                f'--profiles-dir /opt/airflow/.dbt '
-                f'--project-dir /opt/airflow/dags/current/pipelines/data_transformation '
-            ),
+            bash_command='id && whoami && echo $PATH && ls /home/airflow/.local/bin/',
             retries=2,
             retry_delay=timedelta(minutes=5),
         )
