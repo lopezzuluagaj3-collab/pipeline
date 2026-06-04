@@ -4,6 +4,9 @@
     file_format='parquet',
     location_root='s3a://sirius-logs-riwi/tlc/staging/fhv',
     partition_by=['anio', 'mes'],
+    pre_hook=[
+      "CREATE OR REPLACE TEMPORARY VIEW fhv_source USING parquet OPTIONS (path 's3a://sirius-logs-riwi/tlc/raw/fhv/{{ var(\"anio\") }}/fhv_tripdata_{{ var(\"anio\") }}-{{ \"%02d\" | format(var(\"mes\") | int) }}.parquet')"
+    ],
     spark_conf={
       'spark.sql.shuffle.partitions': '11',
       'spark.sql.adaptive.enabled': 'true',
@@ -20,7 +23,7 @@
 WITH source AS (
 
     SELECT *
-    FROM parquet.`s3a://sirius-logs-riwi/tlc/raw/fhv/{{ var("anio") }}/fhv_tripdata_{{ var("anio") }}-{{ "%02d" | format(var("mes") | int) }}.parquet`
+    FROM fhv_source
 
 ),
 
