@@ -13,9 +13,9 @@
       'spark.sql.adaptive.coalescePartitions.enabled': 'true',
       'spark.sql.adaptive.coalescePartitions.minPartitionNum': '11',
       'spark.sql.files.maxPartitionBytes': '67108864',
-      'spark.hadoop.fs.s3a.endpoint': 's3.us-east-1.amazonaws.com',
+      'spark.hadoop.fs.s3a.endpoint': 's3.us-east-2.amazonaws.com',
       'spark.hadoop.fs.s3a.endpoint.region': 'us-east-2',
-      'spark.hadoop.fs.s3a.bucket.sirius-logs-riwi.endpoint': 's3.us-east-1.amazonaws.com',
+      'spark.hadoop.fs.s3a.bucket.sirius-logs-riwi.endpoint': 's3.us-east-2.amazonaws.com',
       'spark.hadoop.fs.s3a.bucket.sirius-logs-riwi.endpoint.region': 'us-east-2',
       'spark.hadoop.fs.s3a.path.style.access': 'true'
     }
