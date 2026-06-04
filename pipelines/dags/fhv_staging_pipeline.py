@@ -31,7 +31,7 @@ def generar_periodos(anio_inicio, anio_fin):
 def ya_procesado(anio, mes, **context):
     """
     Verifica si el prefijo ya existe en S3 staging.
-    Si existe → ShortCircuit devuelve False → skip del dbt run.
+    Si existe → ShortCircuit devuelve False → omite el dbt run.
     Si no existe → devuelve True → corre dbt run.
     """
     s3 = boto3.client('s3', region_name='us-east-1')
@@ -50,7 +50,7 @@ def ya_procesado(anio, mes, **context):
         return False  # ShortCircuit: no corre el siguiente task
 
     print(f'[RUN] {prefix} no existe — procesando.')
-    return True  # ShortCircuit: sí corre el siguiente task
+    return True  # ShortCircuit: sí corre la siguiente tarea
 
 
 default_args = {
@@ -86,18 +86,19 @@ with DAG(
         # ── Task 2: correr dbt solo si no existe ──
         run = BashOperator(
             task_id=f'stg_fhv_{anio}_{mes:02d}',
-			bash_command=(
-    			f'/home/airflow/.local/bin/dbt run '
-   				f'--select {MODELO} '
-    			f'--vars \'{{"anio": {anio}, "mes": {mes}}}\' '
-    			f'--profiles-dir /opt/airflow/.dbt '
-    			f'--project-dir /opt/airflow/dags/current/pipelines/data_transformation '
-    			f'--target-path /tmp/dbt_target '
-    			f'--log-path /tmp/dbt_logs '
-    			f'2>&1'
-				),
+            bash_command=(
+                f'/home/airflow/.local/bin/dbt run '
+                f'--select {MODELO} '
+                f'--vars \'{{"anio": {anio}, "mes": {mes}}}\' '
+                f'--profiles-dir /opt/airflow/.dbt '
+                f'--project-dir /opt/airflow/dags/current/pipelines/data_transformation '
+                f'--target-path /tmp/dbt_target '
+                f'--log-path /tmp/dbt_logs '
+                f'2>&1'
+            ),
+            execution_timeout=timedelta(hours=2),   # <── evita que Airflow mate el task
             retries=2,
-            retry_delay=timedelta(minutes=5),
+            retry_delay=timedelta(minutes=10),      # <── más tiempo entre reintentos
         )
 
         # check → run secuencial

@@ -31,7 +31,7 @@ def generar_periodos(anio_inicio, anio_fin):
 def ya_procesado(anio, mes, **context):
     """
     Verifica si el prefijo ya existe en S3 staging.
-    Si existe → ShortCircuit devuelve False → skip del dbt run.
+    Si existe → ShortCircuit devuelve False → omite el dbt run.
     Si no existe → devuelve True → corre dbt run.
     """
     s3 = boto3.client('s3', region_name='us-east-1')
@@ -50,7 +50,7 @@ def ya_procesado(anio, mes, **context):
         return False  # ShortCircuit: no corre el siguiente task
 
     print(f'[RUN] {prefix} no existe — procesando.')
-    return True  # ShortCircuit: sí corre el siguiente task
+    return True  # ShortCircuit: sí corre la siguiente tarea
 
 
 default_args = {

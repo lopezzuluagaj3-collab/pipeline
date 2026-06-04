@@ -176,15 +176,15 @@ def write_report(metrics: dict[str, Any], output_dir: str | Path, report_format:
         valid_rate = round((metrics["total_valid_records"] / metrics["incoming_records"]) * 100, 2)
 
         lines = [
-            "Airbnb ETL Report - Hallazgos del Analisis",
+            "Airbnb ETL Report - Hallazgos del Análisis",
             "==========================================",
             "",
             "1. Resumen general",
             "------------------",
             f"Durante el proceso ETL se analizaron {metrics['incoming_records']} registros originales.",
             (
-                f"Despues de aplicar reglas de limpieza y validacion quedaron "
-                f"{metrics['total_valid_records']} registros validos, equivalentes al {valid_rate}% "
+                f"Después de aplicar reglas de limpieza y validación quedaron "
+                f"{metrics['total_valid_records']} registros válidos, equivalentes al {valid_rate}% "
                 "del dataset inicial."
             ),
             (
@@ -199,49 +199,49 @@ def write_report(metrics: dict[str, Any], output_dir: str | Path, report_format:
                 "usando el campo id como identificador principal."
             ),
             (
-                f"Tambien se eliminaron {metrics['invalid_or_null_records_removed']} registros con valores "
-                "nulos criticos o datos invalidos, por ejemplo precios vacios, precios menores o iguales "
-                "a cero, coordenadas fuera de rango, noches minimas invalidas o disponibilidad fuera del "
-                "rango esperado de 0 a 365 dias."
+                f"También se eliminaron {metrics['invalid_or_null_records_removed']} registros con valores "
+                "nulos críticos o datos inválidos, por ejemplo precios vacíos, precios menores o iguales "
+                "a cero, coordenadas fuera de rango, noches mínimas inválidas o disponibilidad fuera del "
+                "rango esperado de 0 a 365 días."
             ),
-            "Las columnas house_rules y license fueron descartadas por su baja utilidad para las metricas solicitadas.",
+            "Las columnas house_rules y license fueron descartadas por su baja utilidad para las métricas solicitadas.",
             "",
             "3. Hallazgos comerciales",
             "------------------------",
             (
-                f"El precio promedio de los alojamientos validos es {metrics['average_price']}. "
-                "Este valor se calculo despues de convertir la columna price desde texto con simbolos "
-                "monetarios a formato numerico."
+                f"El precio promedio de los alojamientos válidos es {metrics['average_price']}. "
+                "Este valor se calculó después de convertir la columna price desde texto con símbolos "
+                "monetarios a formato numérico."
             ),
             (
                 f"La zona con mayor cantidad de alojamientos es {metrics['city_with_most_listings']}, "
-                f"con {metrics['city_with_most_listings_count']} registros validos."
+                f"con {metrics['city_with_most_listings_count']} registros válidos."
             ),
             (
                 f"El promedio de reviews por alojamiento es {metrics['average_reviews']}, lo que permite "
-                "tener una referencia general del nivel de interaccion historica de los usuarios con los "
+                "tener una referencia general del nivel de interacción histórica de los usuarios con los "
                 "alojamientos publicados."
             ),
             "",
             "4. Transformaciones aplicadas",
             "-----------------------------",
-            "Se convirtieron las columnas price y service fee a valores numericos.",
-            "Se normalizaron textos de ciudad/zona, barrio y tipo de habitacion.",
-            "Se rellenaron valores opcionales con Unknown o cero segun el tipo de columna.",
-            "Se validaron coordenadas, disponibilidad, precios, reviews y noches minimas.",
-            "Se genero una columna city a partir de neighbourhood group para facilitar el analisis por zona.",
+            "Se convirtieron las columnas price y service fee a valores numéricos.",
+            "Se normalizaron textos de ciudad/zona, barrio y tipo de habitación.",
+            "Se rellenaron valores opcionales con Unknown o cero según el tipo de columna.",
+            "Se validaron coordenadas, disponibilidad, precios, reviews y noches mínimas.",
+            "Se generó una columna city a partir de neighbourhood group para facilitar el análisis por zona.",
             "",
             "5. Archivos generados",
             "---------------------",
             "airbnb_clean_data.csv: dataset limpio listo para dashboards o cargas posteriores.",
-            "airbnb_report.json: reporte estructurado con metricas principales.",
-            "airbnb_report.txt: reporte descriptivo con hallazgos del analisis.",
+            "airbnb_report.json: reporte estructurado con métricas principales.",
+            "airbnb_report.txt: reporte descriptivo con hallazgos del análisis.",
             "",
             "6. Conclusion",
             "-------------",
             (
-                "El dataset final conserva la gran mayoria de los registros originales y queda preparado "
-                "para alimentar dashboards internos, analisis comerciales y procesos posteriores de carga "
+                "El dataset final conserva la gran mayoría de los registros originales y queda preparado "
+                "para alimentar dashboards internos, análisis comerciales y procesos posteriores de carga "
                 "en almacenamiento limpio."
             ),
         ]

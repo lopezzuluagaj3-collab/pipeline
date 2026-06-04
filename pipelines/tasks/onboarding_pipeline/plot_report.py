@@ -21,7 +21,7 @@ def plot_airbnb_report(report_path: str | Path, output_path: str | Path | None =
     output = Path(output_path) if output_path else report_path.with_name("airbnb_report_dashboard.png")
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    records_labels = ["Originales", "Validos", "Duplicados", "Invalidos/nulos"]
+    records_labels = ["Originales", "Válidos", "Duplicados", "Inválidos/nulos"]
     records_values = [
         metrics["incoming_records"],
         metrics["total_valid_records"],
@@ -42,7 +42,7 @@ def plot_airbnb_report(report_path: str | Path, output_path: str | Path | None =
     removed_records = metrics["duplicates_removed"] + metrics["invalid_or_null_records_removed"]
     axes[0, 1].pie(
         [valid_records, removed_records],
-        labels=["Validos", "Removidos"],
+        labels=["Válidos", "Removidos"],
         autopct="%1.1f%%",
         startangle=90,
         colors=["#16a34a", "#ef4444"],
@@ -60,7 +60,7 @@ def plot_airbnb_report(report_path: str | Path, output_path: str | Path | None =
     city_label = metrics["city_with_most_listings"]
     city_count = metrics["city_with_most_listings_count"]
     axes[1, 1].barh([city_label], [city_count], color="#ea580c")
-    axes[1, 1].set_title("Zona con Mas Alojamientos")
+    axes[1, 1].set_title("Zona con Más Alojamientos")
     axes[1, 1].set_xlabel("Alojamientos")
     axes[1, 1].bar_label(axes[1, 1].containers[0], fmt="%.0f", padding=3)
 
