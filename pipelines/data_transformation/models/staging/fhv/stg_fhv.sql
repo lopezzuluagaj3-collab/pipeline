@@ -2,13 +2,13 @@
   config(
     materialized='table',
     file_format='parquet',
-    location='s3a://sirius-logs-riwi/tlc/staging/fhv',
+    location_root='s3a://sirius-logs-riwi/tlc/staging/fhv',
     partition_by=['anio', 'mes'],
     spark_conf={
-      'spark.sql.shuffle.partitions': '13',
+      'spark.sql.shuffle.partitions': '11',
       'spark.sql.adaptive.enabled': 'true',
       'spark.sql.adaptive.coalescePartitions.enabled': 'true',
-      'spark.sql.adaptive.coalescePartitions.minPartitionNum': '13',
+      'spark.sql.adaptive.coalescePartitions.minPartitionNum': '11',
       'spark.sql.files.maxPartitionBytes': '67108864'
     }
   )
