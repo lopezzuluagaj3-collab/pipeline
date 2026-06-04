@@ -2,8 +2,7 @@
   config(
     materialized='table',
     file_format='parquet',
-    location_root='s3a://sirius-logs-riwi/tlc/staging/fhv',
-    partition_by=['anio', 'mes'],
+    location='s3a://sirius-logs-riwi/tlc/staging/fhv/anio={{ var("anio") }}/mes={{ "%02d" | format(var("mes") | int) }}',
     pre_hook=[
       "CREATE OR REPLACE TEMPORARY VIEW fhv_source USING parquet OPTIONS (path 's3a://sirius-logs-riwi/tlc/raw/fhv/{{ var(\"anio\") }}/fhv_tripdata_{{ var(\"anio\") }}-{{ \"%02d\" | format(var(\"mes\") | int) }}.parquet')"
     ],
@@ -15,13 +14,10 @@
       'spark.sql.files.maxPartitionBytes': '67108864',
       'spark.hadoop.fs.s3a.endpoint': 's3.us-east-2.amazonaws.com',
       'spark.hadoop.fs.s3a.endpoint.region': 'us-east-2',
-      'spark.hadoop.fs.s3a.bucket.sirius-logs-riwi.endpoint': 's3.us-east-2.amazonaws.com',
-      'spark.hadoop.fs.s3a.bucket.sirius-logs-riwi.endpoint.region': 'us-east-2',
       'spark.hadoop.fs.s3a.path.style.access': 'true'
     }
   )
 }}
-
 -- ─────────────────────────────────────────────
 -- CTE 1: Leer el archivo parquet del mes/año exacto
 -- ─────────────────────────────────────────────
