@@ -33,7 +33,7 @@ WITH raw_data AS (
 
 normalized_columns AS (
     SELECT 
-        {% if var("anio") | int = 2024%}
+        {% if var("anio") | int == 2024%}
             CAST(VendorID AS INTEGER) AS vendor_id,
             CAST(lpep_pickup_datetime AS TIMESTAMP) AS tpep_pickup_datetime,
             CAST(lpep_dropoff_datetime AS TIMESTAMP) AS tpep_dropoff_datetime,
