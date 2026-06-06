@@ -1,15 +1,17 @@
 from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.python import BranchPythonOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.providers.standard.operators.python import BranchPythonOperator
 from airflow.operators.empty import EmptyOperator
 from datetime import datetime, timedelta, timezone
 import boto3
 
-MODELO         = 'stg_fhv'          # cambia por tipo
+MODELO         = 'stg_fhv'
 BUCKET         = 'sirius-logs-riwi'
-STAGING_PREFIX = 'tlc/staging/fhv'  # cambia por tipo
+STAGING_PREFIX = 'tlc/staging/fhv'
 
 def decidir(anio, mes, **context):
+    anio = int(anio)
+    mes  = int(mes)
     s3 = boto3.client('s3', region_name='us-east-2')
     prefix = f'{STAGING_PREFIX}/anio={anio}/mes={mes:02d}/'
     response = s3.list_objects_v2(Bucket=BUCKET, Prefix=prefix, MaxKeys=1)
@@ -20,7 +22,8 @@ def decidir(anio, mes, **context):
     return 'dbt_run'
 
 with DAG(
-    dag_id='fhv_staging_pipeline',  # cambia por tipo
+    dag_id='fhv_staging_pipeline',
+    description='FHV staging — un periodo por ejecución',
     schedule=None,
     start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
     catchup=False,
@@ -32,8 +35,8 @@ with DAG(
         task_id='check_existe_s3',
         python_callable=decidir,
         op_kwargs={
-            'anio': '{{ params.anio | int }}',
-            'mes':  '{{ params.mes | int }}',
+            'anio': '{{ params.anio }}',
+            'mes':  '{{ params.mes }}',
         },
     )
 
@@ -43,7 +46,7 @@ with DAG(
         task_id='dbt_run',
         bash_command=(
             '/home/airflow/.local/bin/dbt run '
-            '--select stg_fhv '  # cambia por tipo
+            '--select stg_fhv '
             '--vars \'{"anio": {{ params.anio }}, "mes": {{ params.mes }}}\' '
             '--profiles-dir /opt/airflow/.dbt '
             '--project-dir /opt/airflow/dags/current/pipelines/data_transformation '
