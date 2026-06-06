@@ -36,6 +36,7 @@ with DAG(
             'anio': '{{ params.anio | int }}',
             'mes':  '{{ params.mes | int }}',
         },
+        ignore_downstream_trigger_rules=True,
     )
 
     run = BashOperator(
