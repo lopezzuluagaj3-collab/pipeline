@@ -5,18 +5,13 @@ import boto3
 import os
 
 SPARK_INSTANCE_IDS = [
-    "i-0dc6390f17528d2f2",  # SVR-MASTER-SPARK
-    "i-013fe65f5dfb3a615",  # SVR-WORKER-SPARK-2
-    "i-0f17022ecefb9bf9a",  # SVR-WORKER-SPARK-3
-    "i-06e31c09ad09ad301",  # SVR-WORKER-SPARK-4
-    "i-016238606a706548f",  # SVR-WORKER-SPARK-5
-    "i-07325967ae576aa9c",  # SVR-WORKER-SPARK-6
-    "i-071409f25064b2d8e",  # SVR-WORKER-SPARK-7
-    "i-0e7300ce4baf5ddfc",  # SVR-WORKER-SPARK-8
-    "i-09102f527db28cbe6",  # SVR-WORKER-SPARK-9
-    "i-0afd1bda307909772",  # SVR-WORKER-SPARK-10
-    "i-046f6f9d94c0e1901",  # SVR-WORKER-SPARK-11
-    "i-0a0cde4467f64a90b",  # SVR-WORKER-SPARK-12
+    "i-007a25c978bd7a66a",  # SVR-MASTER-SPARK
+    "i-0093c9e4d7562951c",  # SVR-WORKER-SPARK-2
+    "i-060d29e6d4b57e3f6",  # SVR-WORKER-SPARK-3
+    "i-0809120f3580935da",  # SVR-WORKER-SPARK-4
+    "i-0e1d641431a979cd3",  # SVR-WORKER-SPARK-5
+    "i-0c067c808e429a7a7",  # SVR-WORKER-SPARK-6
+    "i-0ce93d4c5c795981c",  # SVR-WORKER-SPARK-7
 ]
 
 # ─── HELPER ───────────────────────────────────────────────────────────────────

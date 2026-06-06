@@ -1,6 +1,7 @@
 from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.python import ShortCircuitOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.providers.standard.operators.python import BranchPythonOperator
+from airflow.operators.empty import EmptyOperator
 from datetime import datetime, timedelta, timezone
 import boto3
 
@@ -8,16 +9,17 @@ MODELO         = 'stg_yellow'
 BUCKET         = 'sirius-logs-riwi'
 STAGING_PREFIX = 'tlc/staging/yellow'
 
-def ya_procesado(anio, mes, **context):
-    s3 = boto3.client('s3', region_name='us-east-1')
+def decidir(anio, mes, **context):
+    anio = int(anio)
+    mes  = int(mes)
+    s3 = boto3.client('s3', region_name='us-east-2')
     prefix = f'{STAGING_PREFIX}/anio={anio}/mes={mes:02d}/'
     response = s3.list_objects_v2(Bucket=BUCKET, Prefix=prefix, MaxKeys=1)
-    existe = response.get('KeyCount', 0) > 0
-    if existe:
-        print(f'[SKIP] {prefix} ya existe — omitiendo.')
-        return False
-    print(f'[RUN] {prefix} no existe — procesando.')
-    return True
+    if response.get('KeyCount', 0) > 0:
+        print(f'[SKIP] {prefix} ya existe.')
+        return 'skip'
+    print(f'[RUN] {prefix} no existe.')
+    return 'dbt_run'
 
 with DAG(
     dag_id='yellow_staging_pipeline',
@@ -25,18 +27,20 @@ with DAG(
     schedule=None,
     start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
     catchup=False,
-    params={'anio': 2009, 'mes': 1},
+    params={'anio': 2015, 'mes': 1},
     tags=['yellow', 'staging', 'dbt'],
 ) as dag:
 
-    check = ShortCircuitOperator(
+    branch = BranchPythonOperator(
         task_id='check_existe_s3',
-        python_callable=ya_procesado,
+        python_callable=decidir,
         op_kwargs={
-            'anio': '{{ params.anio | int }}',
-            'mes':  '{{ params.mes | int }}',
+            'anio': '{{ params.anio }}',
+            'mes':  '{{ params.mes }}',
         },
     )
+
+    skip = EmptyOperator(task_id='skip')
 
     run = BashOperator(
         task_id='dbt_run',
@@ -55,4 +59,4 @@ with DAG(
         retry_delay=timedelta(minutes=10),
     )
 
-    check >> run
+    branch >> [skip, run]
