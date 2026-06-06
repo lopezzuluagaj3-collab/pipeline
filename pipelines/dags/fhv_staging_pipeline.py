@@ -1,5 +1,9 @@
+from airflow import DAG
+from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.operators.empty import EmptyOperator
+from datetime import datetime, timedelta, timezone
+import boto3
 
 def decidir(anio, mes, **context):
     import boto3
