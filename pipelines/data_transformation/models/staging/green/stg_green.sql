@@ -27,7 +27,7 @@
 WITH raw_data AS (
   SELECT *
   FROM green_source
-);
+),
 
 -- 2. Rename columns to a normalized name
 
@@ -48,7 +48,7 @@ normalized_columns AS (
             CAST(tip_amount AS DOUBLE) AS tip_amt,
             CAST(tolls_amount AS DOUBLE) AS tolls_amt,
             CAST(congestion_surcharge AS DOUBLE) AS congestion_surcharge,
-            CAST(cbd_congestion_fee AS DOUBLE) AS cbd_congestion_fee
+            CAST(cbd_congestion_fee AS DOUBLE) AS cbd_congestion_fee,
             CAST(improvement_surcharge AS DOUBLE) AS improvement_surcharge,
             CAST(total_amount AS DOUBLE) AS total_amt,
 
@@ -173,8 +173,8 @@ nulls_first_filter AS (
         COALESCE(fare_amount, 0) AS fare_amount, 
         COALESCE(extra, 0) AS extra, 
         COALESCE(mta_tax, 0) AS mta_tax, 
-        COALESCE(tip_amount, 0) AS tip_amount, 
-        COALESCE(tolls_amount, 0) AS tolls_amount,
+        COALESCE(tip_amount, 0) AS tip_amt, 
+        COALESCE(tolls_amount, 0) AS tolls_amt,
         COALESCE(congestion_surcharge, 0) AS congestion_surcharge,
         COALESCE(cbd_congestion_fee, 0) AS cbd_congestion_fee, 
         COALESCE(improvement_surcharge, 0) AS improvement_surcharge,
@@ -219,16 +219,126 @@ range_payment AS (
     payment_type,
     SUM(proportion) OVER (ORDER BY payment_type) - proportion AS low_limit,
     SUM(proportion) OVER (ORDER BY payment_type) AS upper_limit
-  FROM mode proportion
+  FROM mode_proportion
 )
 
 nulls_third_filter AS(
-  n.* EXCEPT payment_type
+  SELECT 
+  n.* EXCEPT payment_type,
   CASE
-    WHEN n.payment_type is null THEN 
+    WHEN n.payment_type IS NOT NULL THEN n.payment_type
+    ELSE(
+      SELECT r.payment_type
+      FROM range_payment r
+      WHERE n.rand_val >= r.low_limit
+      AND n.rand_val < r.upper_limit
+      LIMIT 1
+    )
+  END AS payment_type
+
+  FROM(
+    SELECT *, RAND() AS rand_val
+    FROM nulls_second_filter
+  ) n
+)
+
+--8. Outliers management: amount columns atypical Values
+
+stats_percentiles AS (
+  SELECT 
+    PERCENTILE(trip_distance, 0.99) AS p99_trip_distance,
+    PERCENTILE(fare_amount, 0.99) AS p99_fare_amount,
+    PERCENTILE(extra, 0.99) AS p99_extra,
+    PERCENTILE(mta_tax, 0.99) AS p99_mta_tax,
+    PERCENTILE(tip_amt, 0.99) AS p99_tip_amt,
+    PERCENTILE(tolls_amt, 0.99) AS p99_tolls_amt,
+    PERCENTILE(congestion_surcharge, 0.99) AS p99_congestion_surcharge,
+    PERCENTILE(cbd_congestion_fee, 0.99) AS p99_cbd_congestion_fee,
+    PERCENTILE(improvement_surcharge, 0.99) AS p99_improvement_surcharge,
+    PERCENTILE(total_amt, 0.99) AS p99_total_amt,
+    PERCENTILE(true_total_amt,  0.99) AS p99_true_total_amt
+  FROM nulls_third_filter
+)
+
+calculated_max AS (
+  SELECT 
+    p99_trip_distance * 1.5 AS max_trip_distance,
+    p99_fare_amount * 1.5 AS max_fare_amount,
+    p99_extra * 1.5 AS max_extra,
+    p99_mta_tax * 1.5 AS max_mta_tax,
+    p99_tip_amt * 1.5 AS max_tip_amt,
+    p99_tolls_amt * 1.5 AS max_tolls_amt,
+    p99_congestion_surcharge * 1.5 AS max_congestion_surcharge,
+    p99_cbd_congestion_fee  * 1.5 AS max_cbd_congestion_fee,
+    p99_improvement_surcharge  * 1.5 AS max_improvement_surcharge,
+    p99_total_amt  * 1.5 AS max_total_amt,
+    p99_true_total_amt * 1.5 AS max_true_total_amt
+  FROM stats_percentiles
+)
+
+atypical_amount_values_fixing AS (
+  SELECT
+    n.* EXCEPT (trip_distance,fare_amount, extra,mta_tax,tip_amt,tolls_amt,congestion_surcharge,cbd_congestion_fee, improvement_surcharge,total_amt,true_total_amt),
+    CASE
+      WHEN n.trip_distance > c.max_trip_distance THEN c.max_trip_distance
+      ELSE n.trip_distance
+    END AS trip_distance,
+
+    CASE
+      WHEN n.fare_amount > c.max_fare_amount THEN c.max_fare_amount
+      ELSE n.fare_amount
+    END AS fare_amount,
+
+    CASE
+      WHEN n.extra > c.max_extra THEN c.max_extra
+      ELSE n.extra
+    END AS extra,
+
+    CASE
+      WHEN n.mta_tax > c.max_mta_tax THEN c.max_mta_tax
+      ELSE n.mta_tax
+    END AS mta_tax,
+
+    CASE
+      WHEN n.tip_amt > c.max_tip_amt THEN c.max_tip_amt
+      ELSE n.tip_amt
+    END AS tip_amt,
+
+    CASE
+      WHEN n.tolls_amt > c.max_tolls_amt THEN c.max_tolls_amt
+      ELSE n.tolls_amt
+    END AS tolls_amt,
+
+    CASE
+      WHEN n.congestion_surcharge > c.max_congestion_surcharge THEN c.max_congestion_surcharge
+      ELSE n.congestion_surcharge
+    END AS congestion_surcharge,
+    
+    CASE
+      WHEN n.cbd_congestion_fee > c.max_cbd_congestion_fee THEN c.max_cbd_congestion_fee
+      ELSE n.cbd_congestion_fee
+    END AS cbd_congestion_fee,
+
+    CASE
+      WHEN n.improvement_surcharge > c.max_improvement_surcharge THEN c.max_provement_surcharge
+      ELSE n.improvement_surcharge
+    END AS improvement_surcharge,
+
+    CASE
+      WHEN n.total_amt > c.max_total_amt THEN c.max_total_amt
+      ELSE n.total_amt
+    END AS total_amt,
+
+    CASE
+      WHEN n.true_total_amt > c.max_true_total_amt THEN c.max_true_total_amt
+      ELSE n.true_total_amt
+    END AS true_total_amt
+
+  FROM nulls_third_filter n
+  CROSS JOIN  calculated_max c
 )
 
 
 -- FInal select
 SELECT *
-FROM limpio
+FROM atypical_amount_values_fixing;
