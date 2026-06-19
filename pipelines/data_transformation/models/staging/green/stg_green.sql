@@ -30,10 +30,9 @@ WITH raw_data AS (
 ),
 
 -- 2. Rename columns to a normalized name
-
 normalized_columns AS (
     SELECT 
-        {% if var("anio") | int == 2024%}
+        {% if var("anio") | int == 2024 %}
             CAST(VendorID AS INTEGER) AS vendor_id,
             CAST(lpep_pickup_datetime AS TIMESTAMP) AS tpep_pickup_datetime,
             CAST(lpep_dropoff_datetime AS TIMESTAMP) AS tpep_dropoff_datetime,
@@ -112,8 +111,7 @@ normalized_columns AS (
             CAST(trip_type AS INTEGER) AS trip_type
         {% endif %}
     FROM raw_data
-)
-
+),
 
 -- 3. Filter anomalies in dates 
 correct_date AS (
@@ -121,10 +119,9 @@ correct_date AS (
     FROM normalized_columns
     WHERE EXTRACT(year from tpep_pickup_datetime) = {{var("anio")}}
     AND EXTRACT(year from  tpep_dropoff_datetime) = {{var("anio")}}
-)
+),
 
 -- 4. Delete Duplicated
-
 duplicated_delete AS (
   SELECT *
   FROM (SELECT *,
@@ -138,28 +135,25 @@ duplicated_delete AS (
           ORDER BY tpep_pickup_datetime) AS rn
       FROM correct_date)
   WHERE rn = 1
-)
+),
 
 -- 5. Delete Anomalies in trip distance and total amount
-
 delete_amount_anomalies AS (
   SELECT *
   FROM duplicated_delete
   WHERE total_amt >=0 AND trip_distance>=0 
-)
+),
 
 -- 6. Delete Date anomalies
-
 delete_date_anomalies AS(
   SELECT *
   FROM delete_amount_anomalies
   WHERE tpep_dropoff_datetime>= tpep_pickup_datetime
-)
+),
 
 -- 7. Nulls management 
 
 -- 7.1 Firts null filter: ratecode_id and amount columns
-
 nulls_first_filter AS (
     SELECT 
         vendor_id, 
@@ -173,8 +167,8 @@ nulls_first_filter AS (
         COALESCE(fare_amount, 0) AS fare_amount, 
         COALESCE(extra, 0) AS extra, 
         COALESCE(mta_tax, 0) AS mta_tax, 
-        COALESCE(tip_amount, 0) AS tip_amt, 
-        COALESCE(tolls_amount, 0) AS tolls_amt,
+        COALESCE(tip_amt, 0) AS tip_amt, 
+        COALESCE(tolls_amt, 0) AS tolls_amt,
         COALESCE(congestion_surcharge, 0) AS congestion_surcharge,
         COALESCE(cbd_congestion_fee, 0) AS cbd_congestion_fee, 
         COALESCE(improvement_surcharge, 0) AS improvement_surcharge,
@@ -184,18 +178,17 @@ nulls_first_filter AS (
         payment_type,
         COALESCE(trip_type, 1) AS trip_type
     FROM delete_date_anomalies
-)
+),
 
 -- 7.2 Second null filter: passenger_count fixing
-
 stats_passenger AS (
   SELECT FLOOR(AVG(passenger_count)) AS passenger_count_avg
   FROM nulls_first_filter
   WHERE passenger_count is not null and passenger_count <= 6
-)
+),
 
 nulls_second_filter AS(
-  SELECT
+  SELECT /*+ BROADCAST(s) */
     n.* EXCEPT(passenger_count),
     CASE 
       WHEN  n.passenger_count IS NULL THEN passenger_count_avg
@@ -204,46 +197,40 @@ nulls_second_filter AS(
     END AS passenger_count
   FROM nulls_first_filter n
   CROSS JOIN stats_passenger s
-)
+),
 
 -- 7.3 Third null filter: payment_type fixing
-mode_proportion AS(
-  SELECT payment_type, COUNT(*) * 1.0/ SUM(COUNT(*)) OVER() AS proportion
-  FROM nulls_second_filter
-  WHERE payment_type is not null
-  GROUP BY payment_type
-)
-
 range_payment AS (
-  SELECT
-    payment_type,
-    SUM(proportion) OVER (ORDER BY payment_type) - proportion AS low_limit,
-    SUM(proportion) OVER (ORDER BY payment_type) AS upper_limit
-  FROM mode_proportion
-)
+    SELECT
+        payment_type,
+        proportion,
+        SUM(proportion) OVER (ORDER BY payment_type) - proportion AS low_limit,
+        SUM(proportion) OVER (ORDER BY payment_type)              AS upper_limit
+    FROM (
+        SELECT 
+            payment_type, 
+            COUNT(*) * 1.0 / SUM(COUNT(*)) OVER () AS proportion
+        FROM nulls_second_filter
+        WHERE payment_type is not null
+        GROUP BY payment_type
+    )
+),
 
 nulls_third_filter AS(
-  SELECT 
-  n.* EXCEPT payment_type,
-  CASE
-    WHEN n.payment_type IS NOT NULL THEN n.payment_type
-    ELSE(
-      SELECT r.payment_type
-      FROM range_payment r
-      WHERE n.rand_val >= r.low_limit
-      AND n.rand_val < r.upper_limit
-      LIMIT 1
-    )
-  END AS payment_type
-
+  SELECT /*+ BROADCAST(r) */
+    n.* EXCEPT (payment_type, rand_val),
+    COALESCE(n.payment_type, r.payment_type) AS payment_type
   FROM(
     SELECT *, RAND() AS rand_val
     FROM nulls_second_filter
   ) n
-)
+  LEFT JOIN range_payment r
+    ON n.payment_type IS NULL
+    AND n.rand_val >= r.low_limit
+    AND n.rand_val < r.upper_limit
+),
 
 --8. Outliers management: amount columns atypical Values
-
 stats_percentiles AS (
   SELECT 
     PERCENTILE(trip_distance, 0.99) AS p99_trip_distance,
@@ -258,7 +245,7 @@ stats_percentiles AS (
     PERCENTILE(total_amt, 0.99) AS p99_total_amt,
     PERCENTILE(true_total_amt,  0.99) AS p99_true_total_amt
   FROM nulls_third_filter
-)
+),
 
 calculated_max AS (
   SELECT 
@@ -274,10 +261,10 @@ calculated_max AS (
     p99_total_amt  * 1.5 AS max_total_amt,
     p99_true_total_amt * 1.5 AS max_true_total_amt
   FROM stats_percentiles
-)
+),
 
 atypical_amount_values_fixing AS (
-  SELECT
+  SELECT /*+ BROADCAST(c) */
     n.* EXCEPT (trip_distance,fare_amount, extra,mta_tax,tip_amt,tolls_amt,congestion_surcharge,cbd_congestion_fee, improvement_surcharge,total_amt,true_total_amt),
     CASE
       WHEN n.trip_distance > c.max_trip_distance THEN c.max_trip_distance
@@ -320,7 +307,7 @@ atypical_amount_values_fixing AS (
     END AS cbd_congestion_fee,
 
     CASE
-      WHEN n.improvement_surcharge > c.max_improvement_surcharge THEN c.max_provement_surcharge
+      WHEN n.improvement_surcharge > c.max_improvement_surcharge THEN c.max_improvement_surcharge
       ELSE n.improvement_surcharge
     END AS improvement_surcharge,
 
@@ -337,7 +324,6 @@ atypical_amount_values_fixing AS (
   FROM nulls_third_filter n
   CROSS JOIN  calculated_max c
 )
-
 
 -- FInal select
 SELECT *
