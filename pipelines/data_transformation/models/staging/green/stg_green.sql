@@ -33,7 +33,7 @@ WITH raw_data AS (
 
 normalized_columns AS (
     SELECT 
-        {% if var("anio") | int = 2024%}
+        {% if var("anio") | int == 2024%}
             CAST(VendorID AS INTEGER) AS vendor_id,
             CAST(lpep_pickup_datetime AS TIMESTAMP) AS tpep_pickup_datetime,
             CAST(lpep_dropoff_datetime AS TIMESTAMP) AS tpep_dropoff_datetime,
@@ -145,7 +145,7 @@ duplicated_delete AS (
 delete_amount_anomalies AS (
   SELECT *
   FROM duplicated_delete
-  WHERE total_amt >=0 AND trip_distance>=0
+  WHERE total_amt >=0 AND trip_distance>=0 
 )
 
 -- 6. Delete Date anomalies
@@ -156,53 +156,79 @@ delete_date_anomalies AS(
   WHERE tpep_dropoff_datetime>= tpep_pickup_datetime
 )
 
--- 7. Nulls management ratecode_id and Amount Columns
+-- 7. Nulls management 
+
+-- 7.1 Firts null filter: ratecode_id and amount columns
 
 nulls_first_filter AS (
-    SELECT vendor_id, tpep_pickup_datetime, tpep_dropoff_datetime,
+    SELECT 
+        vendor_id, 
+        tpep_pickup_datetime, 
+        tpep_dropoff_datetime,
         COALESCE(ratecode_id, 1) AS ratecode_id,
-        pu_location_id, do_location_id, 
-
-        CASE
-          WHEN passenger_count IS NULL
-          THEN CASE WHEN FLOOR(AVG(passenger_count))
-          ELSE passenger_count
-        END AS passenger_count, 
-
-        trip_distance, fare_amount, extra, mta_tax, tip_amt, tolls_amt,
+        pu_location_id, 
+        do_location_id, 
+        passenger_count,
+        trip_distance, 
+        COALESCE(fare_amount, 0) AS fare_amount, 
+        COALESCE(extra, 0) AS extra, 
+        COALESCE(mta_tax, 0) AS mta_tax, 
+        COALESCE(tip_amount, 0) AS tip_amount, 
+        COALESCE(tolls_amount, 0) AS tolls_amount,
         COALESCE(congestion_surcharge, 0) AS congestion_surcharge,
-        cbd_congestion_fee, improvement_surcharge,
-        total_amt, true_total_amt, comparation_total_amt,
-      
-        CASE
-          WHEN payment_type IS NULL
-          THEN CASE WHEN (
-            SELECT COUNT(payment_type) 
-            FROM delete_date_anomalies
-            GROUP BY payment_type
-            ORDER BY COUNT(payment_type) DESC
-            LIMIT 1)
-          ELSE payment_type
-        END AS payment_type, 
-        
-        CASE
-          WHEN trip_type IS NULL
-          THEN CASE WHEN RAND() <=  0.97 THEN 1 ELSE 2 END 
-          ELSE trip_type
-        END AS trip_type
-       FROM delete_date_anomalies
+        COALESCE(cbd_congestion_fee, 0) AS cbd_congestion_fee, 
+        COALESCE(improvement_surcharge, 0) AS improvement_surcharge,
+        total_amt, 
+        true_total_amt, 
+        comparation_total_amt,
+        payment_type,
+        COALESCE(trip_type, 1) AS trip_type
+    FROM delete_date_anomalies
+)
+
+-- 7.2 Second null filter: passenger_count fixing
+
+stats_passenger AS (
+  SELECT FLOOR(AVG(passenger_count)) AS passenger_count_avg
+  FROM nulls_first_filter
+  WHERE passenger_count is not null and passenger_count <= 6
+)
+
+nulls_second_filter AS(
+  SELECT
+    n.* EXCEPT(passenger_count),
+    CASE 
+      WHEN  n.passenger_count IS NULL THEN passenger_count_avg
+      WHEN n.passenger_count > 6 THEN 6
+      ELSE n.passenger_count
+    END AS passenger_count
+  FROM nulls_first_filter n
+  CROSS JOIN stats_passenger s
+)
+
+-- 7.3 Third null filter: payment_type fixing
+mode_proportion AS(
+  SELECT payment_type, COUNT(*) * 1.0/ SUM(COUNT(*)) OVER() AS proportion
+  FROM nulls_second_filter
+  WHERE payment_type is not null
+  GROUP BY payment_type
+)
+
+range_payment AS (
+  SELECT
+    payment_type,
+    SUM(proportion) OVER (ORDER BY payment_type) - proportion AS low_limit,
+    SUM(proportion) OVER (ORDER BY payment_type) AS upper_limit
+  FROM mode proportion
+)
+
+nulls_third_filter AS(
+  n.* EXCEPT payment_type
+  CASE
+    WHEN n.payment_type is null THEN 
 )
 
 
 -- FInal select
 SELECT *
 FROM limpio
-
-
-
-
-SELECT columna, COUNT(*) AS frecuencia
-FROM tabla
-GROUP BY columna
-ORDER BY frecuencia DESC
-LIMIT 1;
