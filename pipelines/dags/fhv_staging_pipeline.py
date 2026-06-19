@@ -1,111 +1,62 @@
 from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.python import ShortCircuitOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.providers.standard.operators.python import BranchPythonOperator
+from airflow.operators.empty import EmptyOperator
 from datetime import datetime, timedelta, timezone
-from datetime import datetime, timedelta
 import boto3
 
+MODELO         = 'stg_fhv'
+BUCKET         = 'sirius-logs-riwi'
+STAGING_PREFIX = 'tlc/staging/fhv'
 
-# ─────────────────────────────────────────────
-# Parámetros del pipeline — tu compañero solo
-# cambia MODELO y BUCKET_STAGING para su tipo
-# ─────────────────────────────────────────────
-MODELO          = 'stg_fhv'
-BUCKET          = 'sirius-logs-riwi'
-STAGING_PREFIX  = 'tlc/staging/fhv'
-ANIO_INICIO     = 2015
-ANIO_FIN        = 2026
-
-
-def generar_periodos(anio_inicio, anio_fin):
-    periodos = []
-    hoy = datetime.today()
-    for anio in range(anio_inicio, anio_fin + 1):
-        for mes in range(1, 13):
-            if datetime(anio, mes, 1) > hoy.replace(day=1):
-                return periodos
-            periodos.append((anio, mes))
-    return periodos
-
-
-def ya_procesado(anio, mes, **context):
-    """
-    Verifica si el prefijo ya existe en S3 staging.
-    Si existe → ShortCircuit devuelve False → omite el dbt run.
-    Si no existe → devuelve True → corre dbt run.
-    """
-    s3 = boto3.client('s3', region_name='us-east-1')
-    prefix = f'{STAGING_PREFIX}/anio={anio}/mes={mes}/'
-
-    response = s3.list_objects_v2(
-        Bucket=BUCKET,
-        Prefix=prefix,
-        MaxKeys=1
-    )
-
-    existe = response.get('KeyCount', 0) > 0
-
-    if existe:
-        print(f'[SKIP] {prefix} ya existe en S3 — omitiendo.')
-        return False  # ShortCircuit: no corre el siguiente task
-
-    print(f'[RUN] {prefix} no existe — procesando.')
-    return True  # ShortCircuit: sí corre la siguiente tarea
-
-
-default_args = {
-    'owner': 'airflow',
-    'retries': 2,
-    'retry_delay': timedelta(minutes=5),
-}
+def decidir(anio, mes, **context):
+    anio = int(anio)
+    mes  = int(mes)
+    s3 = boto3.client('s3', region_name='us-east-2')
+    prefix = f'{STAGING_PREFIX}/anio={anio}/mes={mes:02d}/'
+    response = s3.list_objects_v2(Bucket=BUCKET, Prefix=prefix, MaxKeys=1)
+    if response.get('KeyCount', 0) > 0:
+        print(f'[SKIP] {prefix} ya existe.')
+        return 'skip'
+    print(f'[RUN] {prefix} no existe.')
+    return 'dbt_run'
 
 with DAG(
     dag_id='fhv_staging_pipeline',
-    default_args=default_args,
-    description='FHV staging mes a mes con skip si ya fue procesado',
+    description='FHV staging — un periodo por ejecución',
     schedule=None,
     start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
     catchup=False,
-    max_active_tasks=1,  
+    params={'anio': 2015, 'mes': 1},
     tags=['fhv', 'staging', 'dbt'],
 ) as dag:
 
-    periodos = generar_periodos(ANIO_INICIO, ANIO_FIN)
-    tarea_anterior = None
+    branch = BranchPythonOperator(
+        task_id='check_existe_s3',
+        python_callable=decidir,
+        op_kwargs={
+            'anio': '{{ params.anio }}',
+            'mes':  '{{ params.mes }}',
+        },
+    )
 
-    for anio, mes in periodos:
+    skip = EmptyOperator(task_id='skip')
 
-        # ── Task 1: verificar si ya existe en S3 ──
-        check = ShortCircuitOperator(
-            task_id=f'check_{anio}_{mes:02d}',
-            python_callable=ya_procesado,
-            op_kwargs={'anio': anio, 'mes': mes},
-            ignore_downstream_trigger_rules=False,
-        )
+    run = BashOperator(
+        task_id='dbt_run',
+        bash_command=(
+            '/home/airflow/.local/bin/dbt run '
+            '--select stg_fhv '
+            '--vars \'{"anio": {{ params.anio }}, "mes": {{ params.mes }}}\' '
+            '--profiles-dir /opt/airflow/.dbt '
+            '--project-dir /opt/airflow/dags/current/pipelines/data_transformation '
+            '--target-path /tmp/dbt_target '
+            '--log-path /tmp/dbt_logs '
+            '2>&1'
+        ),
+        execution_timeout=timedelta(hours=2),
+        retries=2,
+        retry_delay=timedelta(minutes=10),
+    )
 
-        # ── Task 2: correr dbt solo si no existe ──
-        run = BashOperator(
-            task_id=f'stg_fhv_{anio}_{mes:02d}',
-            bash_command=(
-                f'/home/airflow/.local/bin/dbt run '
-                f'--select {MODELO} '
-                f'--vars \'{{"anio": {anio}, "mes": {mes}}}\' '
-                f'--profiles-dir /opt/airflow/.dbt '
-                f'--project-dir /opt/airflow/dags/current/pipelines/data_transformation '
-                f'--target-path /tmp/dbt_target '
-                f'--log-path /tmp/dbt_logs '
-                f'2>&1'
-            ),
-            execution_timeout=timedelta(hours=2),   # <── evita que Airflow mate el task
-            retries=2,
-            retry_delay=timedelta(minutes=10),      # <── más tiempo entre reintentos
-        )
-
-        # check → run secuencial
-        check >> run
-
-        # encadenar al periodo anterior
-        if tarea_anterior is not None:
-            tarea_anterior >> check
-
-        tarea_anterior = run
+    branch >> [skip, run]
