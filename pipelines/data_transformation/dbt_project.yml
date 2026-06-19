@@ -19,3 +19,7 @@ models:
     staging:
       +materialized: table
       +file_format: parquet
+
+vars:
+  anio: 2024
+  mes: 1
