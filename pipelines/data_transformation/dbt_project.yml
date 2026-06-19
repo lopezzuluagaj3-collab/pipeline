@@ -19,3 +19,12 @@ models:
     staging:
       +materialized: table
       +file_format: parquet
+    warehouse:
+      fhv:
+        +schema: fhv_model
+      green:
+        +schema: green_model
+      hvfhs:
+        +schema: hvfhs_model
+      yellow:
+        +schema: yellow_model
