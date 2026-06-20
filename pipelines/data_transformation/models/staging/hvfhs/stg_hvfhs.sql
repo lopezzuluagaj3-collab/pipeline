@@ -7,7 +7,7 @@
       "SET spark.sql.shuffle.partitions = 600",
       "SET spark.sql.adaptive.enabled = true",
       "SET spark.sql.adaptive.coalescePartitions.enabled = true",
-      "CREATE OR REPLACE TEMPORARY VIEW fhvhv_source USING parquet OPTIONS (path 's3a://sirius-logs-riwi/tlc/raw/fhvhv/" ~ var("anio") ~ "/fhvhv_tripdata_" ~ var("anio") ~ "-" ~ "%02d" | format(var("mes") | int) ~ ".parquet')"
+      "CREATE OR REPLACE TEMPORARY VIEW fhvhv_source AS SELECT *, {% if var('anio') | int < 2025 %}CAST(0.0 AS DOUBLE){% else %}CAST(cbd_congestion_fee AS DOUBLE){% endif %} AS cbd_congestion_fee FROM parquet.`s3a://sirius-logs-riwi/tlc/raw/fhvhv/" ~ var("anio") ~ "/fhvhv_tripdata_" ~ var("anio") ~ "-" ~ "%02d" | format(var("mes") | int) ~ ".parquet`"
     ]
   )
 }}
@@ -75,9 +75,8 @@ filtrado_anio as (
 ),
 
 -- ─────────────────────────────────────────────
--- CTE 4: Eliminar duplicados SIN DISTINCT (Regla 1)
--- Alternativa: GROUP BY ALL agrupa por todas las columnas
--- (equivalente a DISTINCT en Spark 3.4+ / DuckDB)
+-- CTE 4: Eliminar duplicados SIN DISTINCT
+-- GROUP BY ALL agrupa por todas las columnas
 -- ─────────────────────────────────────────────
 sin_duplicados as (
 
@@ -88,33 +87,25 @@ sin_duplicados as (
 ),
 
 -- ─────────────────────────────────────────────
--- CTE 5: Validaciones Temporales y Negativos (Reglas 6, 8 y 9)
+-- CTE 5: Validaciones Temporales y Negativos
 -- ─────────────────────────────────────────────
 valida_filtros as (
 
     select *
     from sin_duplicados
     where
-        -- Regla 6: Validaciones temporales
         tpep_pickup_datetime <= tpep_dropoff_datetime
         and tpep_pickup_datetime >= on_scene_datetime
         and tpep_pickup_datetime >= request_datetime
-
-        -- Regla 8: Valores negativos
         and total_amt >= 0
         and trip_distance >= 0
-
-        -- Regla 9: Duración anómala (máx 24h = 86400 s)
         and unix_timestamp(tpep_dropoff_datetime) - unix_timestamp(tpep_pickup_datetime) > 0
         and unix_timestamp(tpep_dropoff_datetime) - unix_timestamp(tpep_pickup_datetime) <= 86400
 
 ),
 
 -- ─────────────────────────────────────────────
--- CTE 6a: Percentiles 99.9% como AGREGACIÓN (1 sola fila)
--- approx_percentile evita ordenar todo el dataset.
--- Esto reemplaza el "percentile_cont() OVER ()" que colapsaba
--- todas las filas en una sola tarea (causa principal del OOM).
+-- CTE 6a: Percentiles 99.9%
 -- ─────────────────────────────────────────────
 percentiles as (
 
@@ -133,9 +124,7 @@ percentiles as (
 ),
 
 -- ─────────────────────────────────────────────
--- CTE 6b: Unión por CROSS JOIN.
--- Al ser "percentiles" una tabla de 1 fila, Spark la hace
--- broadcast: NO genera shuffle.
+-- CTE 6b: Cross join con percentiles (broadcast)
 -- ─────────────────────────────────────────────
 calculo_percentiles as (
 
@@ -146,8 +135,7 @@ calculo_percentiles as (
 ),
 
 -- ─────────────────────────────────────────────
--- CTE 7: Reemplazar Outliers (Regla 7)
--- Si supera P99.9 + 50%, se capa a ese valor máximo tolerado
+-- CTE 7: Reemplazar Outliers
 -- ─────────────────────────────────────────────
 tratamiento_outliers as (
 
@@ -168,22 +156,22 @@ tratamiento_outliers as (
         wav_request_flag,
         wav_match_flag,
 
-        case when fare_amount > (p999_fare_amount * 1.5) then (p999_fare_amount * 1.5) else fare_amount end as fare_amount,
-        case when tolls_amt > (p999_tolls_amt * 1.5) then (p999_tolls_amt * 1.5) else tolls_amt end as tolls_amt,
-        case when bcf > (p999_bcf * 1.5) then (p999_bcf * 1.5) else bcf end as bcf,
-        case when sales_tax > (p999_sales_tax * 1.5) then (p999_sales_tax * 1.5) else sales_tax end as sales_tax,
-        case when congestion_surcharge > (p999_congestion_surcharge * 1.5) then (p999_congestion_surcharge * 1.5) else congestion_surcharge end as congestion_surcharge,
-        case when airport_fee > (p999_airport_fee * 1.5) then (p999_airport_fee * 1.5) else airport_fee end as airport_fee,
-        case when tip_amt > (p999_tip_amt * 1.5) then (p999_tip_amt * 1.5) else tip_amt end as tip_amt,
-        case when cbd_congestion_fee > (p999_cbd_congestion_fee * 1.5) then (p999_cbd_congestion_fee * 1.5) else cbd_congestion_fee end as cbd_congestion_fee,
-        case when total_amt > (p999_total_amt * 1.5) then (p999_total_amt * 1.5) else total_amt end as total_amt
+        case when fare_amount > (p999_fare_amount * 1.5)                 then (p999_fare_amount * 1.5)                 else fare_amount end                 as fare_amount,
+        case when tolls_amt > (p999_tolls_amt * 1.5)                     then (p999_tolls_amt * 1.5)                   else tolls_amt end                   as tolls_amt,
+        case when bcf > (p999_bcf * 1.5)                                 then (p999_bcf * 1.5)                         else bcf end                         as bcf,
+        case when sales_tax > (p999_sales_tax * 1.5)                     then (p999_sales_tax * 1.5)                   else sales_tax end                   as sales_tax,
+        case when congestion_surcharge > (p999_congestion_surcharge * 1.5) then (p999_congestion_surcharge * 1.5)      else congestion_surcharge end         as congestion_surcharge,
+        case when airport_fee > (p999_airport_fee * 1.5)                 then (p999_airport_fee * 1.5)                 else airport_fee end                 as airport_fee,
+        case when tip_amt > (p999_tip_amt * 1.5)                         then (p999_tip_amt * 1.5)                     else tip_amt end                     as tip_amt,
+        case when cbd_congestion_fee > (p999_cbd_congestion_fee * 1.5)   then (p999_cbd_congestion_fee * 1.5)          else cbd_congestion_fee end          as cbd_congestion_fee,
+        case when total_amt > (p999_total_amt * 1.5)                     then (p999_total_amt * 1.5)                   else total_amt end                   as total_amt
 
     from calculo_percentiles
 
 ),
 
 -- ─────────────────────────────────────────────
--- CTE 8: Columnas Derivadas (true_total_amt)
+-- CTE 8: Columnas Derivadas
 -- ─────────────────────────────────────────────
 columnas_derivadas as (
 
@@ -204,7 +192,7 @@ columnas_derivadas as (
 ),
 
 -- ─────────────────────────────────────────────
--- CTE 9: Formateo y Estructura Final con Partición
+-- CTE 9: Estructura Final con Partición
 -- ─────────────────────────────────────────────
 final as (
 
@@ -234,9 +222,7 @@ final as (
         wav_match_flag,
         cbd_congestion_fee,
         true_total_amt,
-        -- Columna derivada: TRUE si el total calculado difiere del reportado
         cast(case when true_total_amt != total_amt then true else false end as boolean) as comparation_total_amt,
-        -- Columnas de control de partición S3
         cast({{ var("anio") }} as integer) as anio,
         cast({{ var("mes") }}  as integer) as mes
     from columnas_derivadas
