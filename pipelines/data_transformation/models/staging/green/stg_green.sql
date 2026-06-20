@@ -47,31 +47,12 @@ normalized_columns AS (
             CAST(tip_amount AS DOUBLE) AS tip_amt,
             CAST(tolls_amount AS DOUBLE) AS tolls_amt,
             CAST(congestion_surcharge AS DOUBLE) AS congestion_surcharge,
-            CAST(cbd_congestion_fee AS DOUBLE) AS cbd_congestion_fee,
+            CAST(0.0 AS DOUBLE) AS cbd_congestion_fee,  -- 2024: no existe, se pone en 0
             CAST(improvement_surcharge AS DOUBLE) AS improvement_surcharge,
             CAST(total_amount AS DOUBLE) AS total_amt,
+            ...
 
-            COALESCE(CAST(fare_amount AS DOUBLE),0) + 
-            COALESCE(CAST(extra AS DOUBLE),0) +
-            COALESCE(CAST(mta_tax AS DOUBLE),0) +
-            COALESCE(CAST(tip_amount AS DOUBLE),0) +
-            COALESCE(CAST(tolls_amount AS DOUBLE),0) +
-            COALESCE(CAST(congestion_surcharge AS DOUBLE),0) +
-            COALESCE(CAST(improvement_surcharge AS DOUBLE),0) AS true_total_amt,
-
-            COALESCE(CAST(total_amount AS DOUBLE),0) -
-            (COALESCE(CAST(fare_amount AS DOUBLE),0) + 
-            COALESCE(CAST(extra AS DOUBLE),0) +
-            COALESCE(CAST(mta_tax AS DOUBLE),0) +
-            COALESCE(CAST(tip_amount AS DOUBLE),0) +
-            COALESCE(CAST(tolls_amount AS DOUBLE),0) +
-            COALESCE(CAST(congestion_surcharge AS DOUBLE),0) +
-            COALESCE(CAST(improvement_surcharge AS DOUBLE),0)) AS comparation_total_amt,
-
-            CAST(payment_type AS INTEGER) AS payment_type,
-            CAST(trip_type AS INTEGER) AS trip_type
-
-        {% else %}
+        {% elif var("anio") | int >= 2025 %}
             CAST(VendorID AS INTEGER) AS vendor_id,
             CAST(lpep_pickup_datetime AS TIMESTAMP) AS tpep_pickup_datetime,
             CAST(lpep_dropoff_datetime AS TIMESTAMP) AS tpep_dropoff_datetime,
@@ -86,29 +67,31 @@ normalized_columns AS (
             CAST(tip_amount AS DOUBLE) AS tip_amt,
             CAST(tolls_amount AS DOUBLE) AS tolls_amt,
             CAST(congestion_surcharge AS DOUBLE) AS congestion_surcharge,
-            CAST(cbd_congestion_fee AS DOUBLE) AS cbd_congestion_fee,
+            CAST(cbd_congestion_fee AS DOUBLE) AS cbd_congestion_fee,  -- 2025+: sí existe
             CAST(improvement_surcharge AS DOUBLE) AS improvement_surcharge,
             CAST(total_amount AS DOUBLE) AS total_amt,
+            ...
 
-            COALESCE(CAST(fare_amount AS DOUBLE),0) + 
-            COALESCE(CAST(extra AS DOUBLE),0) +
-            COALESCE(CAST(mta_tax AS DOUBLE),0) +
-            COALESCE(CAST(tip_amount AS DOUBLE),0) +
-            COALESCE(CAST(tolls_amount AS DOUBLE),0) +
-            COALESCE(CAST(congestion_surcharge AS DOUBLE),0) +
-            COALESCE(CAST(improvement_surcharge AS DOUBLE),0) AS true_total_amt,
-
-            COALESCE(CAST(total_amount AS DOUBLE),0) -
-            (COALESCE(CAST(fare_amount AS DOUBLE),0) + 
-            COALESCE(CAST(extra AS DOUBLE),0) +
-            COALESCE(CAST(mta_tax AS DOUBLE),0) +
-            COALESCE(CAST(tip_amount AS DOUBLE),0) +
-            COALESCE(CAST(tolls_amount AS DOUBLE),0) +
-            COALESCE(CAST(congestion_surcharge AS DOUBLE),0) +
-            COALESCE(CAST(improvement_surcharge AS DOUBLE),0)) AS comparation_total_amt,
-
-            CAST(payment_type AS INTEGER) AS payment_type,
-            CAST(trip_type AS INTEGER) AS trip_type
+        {% else %}
+            -- años antes de 2024 (2013-2023): nombres nuevos, sin cbd_congestion_fee
+            CAST(VendorID AS INTEGER) AS vendor_id,
+            CAST(lpep_pickup_datetime AS TIMESTAMP) AS tpep_pickup_datetime,
+            CAST(lpep_dropoff_datetime AS TIMESTAMP) AS tpep_dropoff_datetime,
+            CAST(RatecodeID AS INTEGER) AS ratecode_id,
+            CAST(PULocationID AS INTEGER) AS pu_location_id,
+            CAST(DOLocationID AS INTEGER) AS do_location_id,
+            CAST(passenger_count AS INTEGER) AS passenger_count,
+            CAST(trip_distance AS DOUBLE) AS trip_distance,
+            CAST(fare_amount AS DOUBLE) AS fare_amount,
+            CAST(extra AS DOUBLE) AS extra,
+            CAST(mta_tax AS DOUBLE) AS mta_tax,
+            CAST(tip_amount AS DOUBLE) AS tip_amt,
+            CAST(tolls_amount AS DOUBLE) AS tolls_amt,
+            CAST(congestion_surcharge AS DOUBLE) AS congestion_surcharge,
+            CAST(0.0 AS DOUBLE) AS cbd_congestion_fee,  -- no existe, se pone en 0
+            CAST(improvement_surcharge AS DOUBLE) AS improvement_surcharge,
+            CAST(total_amount AS DOUBLE) AS total_amt,
+            ...
         {% endif %}
     FROM raw_data
 ),
