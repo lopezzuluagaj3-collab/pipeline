@@ -7,7 +7,7 @@
       "SET spark.sql.shuffle.partitions = 600",
       "SET spark.sql.adaptive.enabled = true",
       "SET spark.sql.adaptive.coalescePartitions.enabled = true",
-      "CREATE OR REPLACE TEMPORARY VIEW fhvhv_source USING parquet OPTIONS (path 's3a://sirius-logs-riwi/tlc/raw/fhvhv/" ~ var("anio") ~ "/fhvtripdata" ~ var("anio") ~ "-" ~ "%02d" | format(var("mes") | int) ~ ".parquet')"
+      "CREATE OR REPLACE TEMPORARY VIEW fhvhv_source USING parquet OPTIONS (path 's3a://sirius-logs-riwi/tlc/raw/fhvhv/" ~ var("anio") ~ "/fhvhv_tripdata_" ~ var("anio") ~ "-" ~ "%02d" | format(var("mes") | int) ~ ".parquet')"
     ]
   )
 }}
