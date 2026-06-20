@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: dim_fecha
+    description: "Dimensión conformada de fecha (spine diario 2019-2026)."
+    columns:
+      - name: fecha_key
+        description: "PK con formato YYYYMMDD."
+        tests: [unique, not_null]
+
+  - name: dim_zona
+    description: "Dimensión de zonas TLC. Aplica a origen (PU) y destino (DO)."
+    columns:
+      - name: location_id
+        description: "PK. -1 representa zona desconocida."
+        tests: [unique, not_null]
+
+  - name: dim_compania
+    description: "Mapeo del código de licencia HVFHS a nombre de compañía."
+    columns:
+      - name: hvfhs_license_num
+        tests: [unique, not_null]
+
+  - name: dim_base_despacho
+    description: "Bases de despacho observadas en la fuente."
+    columns:
+      - name: dispatching_base_num
+        tests: [unique, not_null]
+
+  - name: fct_viajes
+    description: >
+      Hechos a grano de viaje FHVHV. Particionada por anio/mes.
+      total_amt = driver_pay (pago neto al conductor, sin peajes ni propinas).
+      true_total_amt = total cobrado al pasajero. Las métricas
+      tiempo_arribo_conductor_seg y tiempo_espera_sitio_seg solo aplican a
+      vehículos accesibles (wav_match_flag = true); en el resto son NULL.
+    columns:
+      - name: viaje_key
+        description: "Surrogate key del viaje."
+        tests: [not_null]
+      - name: hvfhs_license_num
+        tests:
+          - relationships:
+              to: ref('dim_compania')
+              field: hvfhs_license_num
+      - name: dispatching_base_num
+        tests:
+          - relationships:
+              to: ref('dim_base_despacho')
+              field: dispatching_base_num
+      - name: pu_location_id
+        tests:
+          - relationships:
+              to: ref('dim_zona')
+              field: location_id
+      - name: do_location_id
+        tests:
+          - relationships:
+              to: ref('dim_zona')
+              field: location_id
+      - name: pickup_fecha_key
+        tests:
+          - relationships:
+              to: ref('dim_fecha')
+              field: fecha_key
