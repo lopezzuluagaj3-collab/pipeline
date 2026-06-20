@@ -7,7 +7,7 @@ import boto3
 
 MODELO         = 'stg_hvfhs'
 BUCKET         = 'sirius-logs-riwi'
-STAGING_PREFIX = 'tlc/staging/hvfhs'
+STAGING_PREFIX = 'tlc/staging/fhvhv'
 
 def decidir(anio, mes, **context):
     anio = int(anio)
@@ -22,13 +22,13 @@ def decidir(anio, mes, **context):
     return 'dbt_run'
 
 with DAG(
-    dag_id='hvfhs_staging_pipeline',
-    description='HVFHS staging — un periodo por ejecución',
+    dag_id='fhvhv_staging_pipeline',
+    description='fhvhv staging — un periodo por ejecución',
     schedule=None,
     start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
     catchup=False,
     params={'anio': 2015, 'mes': 1},
-    tags=['hvfhs', 'staging', 'dbt'],
+    tags=['fhvhv', 'staging', 'dbt'],
 ) as dag:
 
     branch = BranchPythonOperator(
