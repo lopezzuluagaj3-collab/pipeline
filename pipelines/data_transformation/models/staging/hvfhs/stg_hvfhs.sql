@@ -29,8 +29,8 @@ with source as (
 renamed as (
 
     select
-        cast(hvfhs_license_num as varchar)                                      as hvfhs_license_num,
-        cast(dispatching_base_num as varchar)                                   as dispatching_base_num,
+        cast(hvfhs_license_num as string)
+        cast(dispatching_base_num as string)                                  as dispatching_base_num,
         cast(request_datetime as timestamp)                                     as request_datetime,
         -- Regla 3: Si on_scene_datetime es NULL, reemplazar con pickup_datetime
         cast(coalesce(on_scene_datetime, pickup_datetime) as timestamp)         as on_scene_datetime,
