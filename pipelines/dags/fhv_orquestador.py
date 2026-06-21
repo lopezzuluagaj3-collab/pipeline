@@ -36,10 +36,12 @@ def ejecutar_pipeline(dag_id, anio_inicio, anio_fin, **context):
         run_id = f'orq_{anio}_{mes:02d}_{datetime.now().strftime("%Y%m%d%H%M%S")}'
 
         r = requests.post(
-         f"{base}/api/v2/dags/{dag_id}/dagRuns",
-         json={"run_id": run_id, "conf": {"anio": anio, "mes": mes}},
-         headers=headers,
-     )
+            f"{base}/api/v2/dags/{dag_id}/dagRuns",
+            json={"run_id": run_id, "conf": {"anio": anio, "mes": mes}},
+            headers=headers,
+        )
+        if not r.ok:
+            raise Exception(f"Error {r.status_code}: {r.text}")
         r.raise_for_status()
 
         while True:
