@@ -33,16 +33,17 @@ def ejecutar_pipeline(dag_id, anio_inicio, anio_fin, **context):
     headers = {"Authorization": f"Bearer {token}"}
 
     for anio, mes in generar_periodos(anio_inicio, anio_fin):
-        run_id = f'orq_{anio}_{mes:02d}_{datetime.now().strftime("%Y%m%d%H%M%S")}'
+        logical_date = datetime(anio, mes, 1, tzinfo=timezone.utc).isoformat()
 
         r = requests.post(
             f"{base}/api/v2/dags/{dag_id}/dagRuns",
-            json={"run_id": run_id, "conf": {"anio": anio, "mes": mes}},
+            json={"logical_date": logical_date, "conf": {"anio": anio, "mes": mes}},
             headers=headers,
         )
         if not r.ok:
             raise Exception(f"Error {r.status_code}: {r.text}")
-        r.raise_for_status()
+
+        run_id = r.json()["run_id"]
 
         while True:
             r = requests.get(
