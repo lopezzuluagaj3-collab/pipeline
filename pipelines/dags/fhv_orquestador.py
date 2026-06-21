@@ -1,8 +1,11 @@
 from airflow import DAG
-from airflow.operators.python import PythonOperator
-from airflow.api.client.local_client import Client
+from airflow.providers.standard.operators.python import PythonOperator
 from datetime import datetime, timezone
+import requests
 import time
+
+AIRFLOW_API = "https://sirius.coderhivex.com/api/v2"
+AUTH = ("admin", "admin")
 
 def generar_periodos(anio_inicio, anio_fin):
     periodos = []
@@ -15,21 +18,30 @@ def generar_periodos(anio_inicio, anio_fin):
     return periodos
 
 def ejecutar_pipeline(dag_id, anio_inicio, anio_fin, **context):
-    client = Client(None, None)
     for anio, mes in generar_periodos(anio_inicio, anio_fin):
         run_id = f'orq_{anio}_{mes:02d}_{datetime.now().strftime("%Y%m%d%H%M%S")}'
-        client.trigger_dag(
-            dag_id=dag_id,
-            run_id=run_id,
-            conf={'anio': anio, 'mes': mes}
+
+        # Disparar
+        r = requests.post(
+            f"{AIRFLOW_API}/dags/{dag_id}/dagRuns",
+            json={"dag_run_id": run_id, "conf": {"anio": anio, "mes": mes}},
+            auth=AUTH,
+            verify=False,
         )
-        # Esperar a que termine antes de disparar el siguiente
+        r.raise_for_status()
+
+        # Esperar
         while True:
-            state = client.get_dag_run_state(dag_id=dag_id, run_id=run_id)
-            if state in ('success', 'failed'):
+            r = requests.get(
+                f"{AIRFLOW_API}/dags/{dag_id}/dagRuns/{run_id}",
+                auth=AUTH,
+                verify=False,
+            )
+            state = r.json().get("state")
+            if state == "success":
                 break
-            if state == 'failed':
-                raise Exception(f'Failed: {anio}-{mes:02d}')
+            if state == "failed":
+                raise Exception(f"Pipeline falló: {anio}-{mes:02d}")
             time.sleep(60)
 
 with DAG(
@@ -47,4 +59,5 @@ with DAG(
             'anio_inicio': 2015,
             'anio_fin': 2026,
         },
+        execution_timeout=None,
     )
