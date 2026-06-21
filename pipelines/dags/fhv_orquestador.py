@@ -37,7 +37,7 @@ def ejecutar_pipeline(dag_id, anio_inicio, anio_fin, **context):
 
         r = requests.post(
             f"{base}/api/v2/dags/{dag_id}/dagRuns",
-            json={"dag_run_id": run_id, "conf": {"anio": anio, "mes": mes}},
+            json={"run_id": run_id, "conf": {"anio": anio, "mes": mes}},
             headers=headers,
         )
         r.raise_for_status()
