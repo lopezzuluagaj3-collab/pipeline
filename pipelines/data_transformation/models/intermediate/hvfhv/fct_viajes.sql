@@ -18,14 +18,20 @@
 -- FKs -> dim_fecha, dim_zona, dim_compania, dim_base_despacho
 -- Incremental: en cada corrida sobrescribe solo la partición anio/mes
 -- ─────────────────────────────────────────────
+-- El staging se materializa particionado por ruta física en S3
+-- (.../anio=YYYY/mes=MM/stg_hvfhs/), por lo que se lee directamente por ruta
+-- en vez de con ref(). anio/mes vienen como columnas dentro del parquet.
+-- En modo incremental se apunta solo a la partición del mes (poda de archivos);
+-- en full-refresh se leen todas con glob.
 with viajes as (
 
     select *
-    from {{ ref('stg_fhvhv') }}
-    {% if is_incremental() %}
-    where anio = {{ var('anio') }}
-      and mes  = {{ var('mes') | int }}
-    {% endif %}
+    from parquet.`s3a://sirius-logs-riwi/tlc/staging/fhvhv/
+        {%- if is_incremental() -%}
+            anio={{ var('anio') }}/mes={{ '%02d' | format(var('mes') | int) }}/stg_hvfhs/
+        {%- else -%}
+            anio=*/mes=*/stg_hvfhs/
+        {%- endif -%}`
 
 )
 

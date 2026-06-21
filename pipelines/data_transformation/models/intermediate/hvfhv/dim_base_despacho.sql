@@ -8,15 +8,16 @@
 
 -- ─────────────────────────────────────────────
 -- Dimensión de base de despacho
--- No existe lookup oficial: se construye con los códigos
--- distintos observados en toda la fuente staging.
--- Ajusta el ref('stg_fhvhv') al nombre real de tu modelo staging.
+-- No existe lookup oficial: se construye con los códigos distintos observados
+-- en TODO el staging. Se lee por ruta (glob) porque el staging está
+-- particionado físicamente en S3 y la tabla del metastore solo apunta a la
+-- última partición escrita.
 -- ─────────────────────────────────────────────
 with bases as (
 
     select distinct
         dispatching_base_num
-    from {{ ref('stg_fhvhv') }}
+    from parquet.`s3a://sirius-logs-riwi/tlc/staging/fhvhv/anio=*/mes=*/stg_hvfhs/`
     where dispatching_base_num is not null
 
 )

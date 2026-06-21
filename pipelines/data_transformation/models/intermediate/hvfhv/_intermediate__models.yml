@@ -41,25 +41,30 @@ models:
       - name: hvfhs_license_num
         tests:
           - relationships:
-              to: ref('dim_compania')
-              field: hvfhs_license_num
+              arguments:
+                to: ref('dim_compania')
+                field: hvfhs_license_num
       - name: dispatching_base_num
         tests:
           - relationships:
-              to: ref('dim_base_despacho')
-              field: dispatching_base_num
+              arguments:
+                to: ref('dim_base_despacho')
+                field: dispatching_base_num
       - name: pu_location_id
         tests:
           - relationships:
-              to: ref('dim_zona')
-              field: location_id
+              arguments:
+                to: ref('dim_zona')
+                field: location_id
       - name: do_location_id
         tests:
           - relationships:
-              to: ref('dim_zona')
-              field: location_id
+              arguments:
+                to: ref('dim_zona')
+                field: location_id
       - name: pickup_fecha_key
         tests:
           - relationships:
-              to: ref('dim_fecha')
-              field: fecha_key
+              arguments:
+                to: ref('dim_fecha')
+                field: fecha_key
