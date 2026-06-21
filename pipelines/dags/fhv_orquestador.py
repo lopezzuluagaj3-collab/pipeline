@@ -70,7 +70,7 @@ with DAG(
         op_kwargs={
             'dag_id': 'fhv_staging_pipeline',
             'anio_inicio': 2015,
-            'anio_fin': 2015,
+            'anio_fin': 2016,
         },
         execution_timeout=None,
     )
