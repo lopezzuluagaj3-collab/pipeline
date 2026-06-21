@@ -46,7 +46,7 @@ with DAG(
         task_id='dbt_run',
         bash_command=(
             '/home/airflow/.local/bin/dbt run '
-            '--select stg_green '
+            '--select staging.green.stg_green '
             '--vars \'{"anio": {{ params.anio }}, "mes": {{ params.mes }}}\' '
             '--profiles-dir /opt/airflow/.dbt '
             '--project-dir /opt/airflow/dags/current/pipelines/data_transformation '
