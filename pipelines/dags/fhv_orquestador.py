@@ -3,9 +3,7 @@ from airflow.providers.standard.operators.python import PythonOperator
 from datetime import datetime, timezone
 import requests
 import time
-
-AIRFLOW_API = "https://sirius.coderhivex.com/api/v2"
-AUTH = ("admin", "admin")
+import os
 
 def generar_periodos(anio_inicio, anio_fin):
     periodos = []
@@ -17,25 +15,37 @@ def generar_periodos(anio_inicio, anio_fin):
             periodos.append((anio, mes))
     return periodos
 
+def get_token():
+    base = os.environ["AIRFLOW_API_URL"]
+    r = requests.post(
+        f"{base}/auth/token",
+        json={
+            "username": os.environ["AIRFLOW_API_USER"],
+            "password": os.environ["AIRFLOW_API_PASS"],
+        },
+    )
+    r.raise_for_status()
+    return r.json()["access_token"]
+
 def ejecutar_pipeline(dag_id, anio_inicio, anio_fin, **context):
+    base = os.environ["AIRFLOW_API_URL"]
+    token = get_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
     for anio, mes in generar_periodos(anio_inicio, anio_fin):
         run_id = f'orq_{anio}_{mes:02d}_{datetime.now().strftime("%Y%m%d%H%M%S")}'
 
-        # Disparar
         r = requests.post(
-            f"{AIRFLOW_API}/dags/{dag_id}/dagRuns",
+            f"{base}/api/v2/dags/{dag_id}/dagRuns",
             json={"dag_run_id": run_id, "conf": {"anio": anio, "mes": mes}},
-            auth=AUTH,
-            verify=False,
+            headers=headers,
         )
         r.raise_for_status()
 
-        # Esperar
         while True:
             r = requests.get(
-                f"{AIRFLOW_API}/dags/{dag_id}/dagRuns/{run_id}",
-                auth=AUTH,
-                verify=False,
+                f"{base}/api/v2/dags/{dag_id}/dagRuns/{run_id}",
+                headers=headers,
             )
             state = r.json().get("state")
             if state == "success":
@@ -57,7 +67,7 @@ with DAG(
         op_kwargs={
             'dag_id': 'fhv_staging_pipeline',
             'anio_inicio': 2015,
-            'anio_fin': 2026,
+            'anio_fin': 2015,
         },
         execution_timeout=None,
     )
