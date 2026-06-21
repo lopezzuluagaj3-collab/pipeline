@@ -33,7 +33,7 @@ def ejecutar_pipeline(dag_id, anio_inicio, anio_fin, **context):
     headers = {"Authorization": f"Bearer {token}"}
 
     for anio, mes in generar_periodos(anio_inicio, anio_fin):
-        logical_date = datetime(anio, mes, 1, tzinfo=timezone.utc).isoformat()
+        logical_date = datetime.now(tz=timezone.utc).isoformat()
 
         r = requests.post(
             f"{base}/api/v2/dags/{dag_id}/dagRuns",
@@ -43,11 +43,11 @@ def ejecutar_pipeline(dag_id, anio_inicio, anio_fin, **context):
         if not r.ok:
             raise Exception(f"Error {r.status_code}: {r.text}")
 
-        run_id = r.json()["run_id"]
+        dag_run_id = r.json()["dag_run_id"]
 
         while True:
             r = requests.get(
-                f"{base}/api/v2/dags/{dag_id}/dagRuns/{run_id}",
+                f"{base}/api/v2/dags/{dag_id}/dagRuns/{dag_run_id}",
                 headers=headers,
             )
             state = r.json().get("state")
