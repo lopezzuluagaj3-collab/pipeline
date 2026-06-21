@@ -144,7 +144,26 @@ stats_passenger AS (
 
 nulls_second_filter AS (
     SELECT /*+ BROADCAST(s) */
-        n.* EXCEPT(passenger_count),
+        n.vendor_id,
+        n.tpep_pickup_datetime,
+        n.tpep_dropoff_datetime,
+        n.ratecode_id,
+        n.pu_location_id,
+        n.do_location_id,
+        n.trip_distance,
+        n.fare_amount,
+        n.extra,
+        n.mta_tax,
+        n.tip_amt,
+        n.tolls_amt,
+        n.congestion_surcharge,
+        n.cbd_congestion_fee,
+        n.improvement_surcharge,
+        n.total_amt,
+        n.true_total_amt,
+        n.comparation_total_amt,
+        n.payment_type,
+        n.trip_type,
         CASE
             WHEN n.passenger_count IS NULL THEN s.passenger_count_avg
             WHEN n.passenger_count > 6     THEN 6
@@ -173,7 +192,26 @@ range_payment AS (
 
 nulls_third_filter AS (
     SELECT /*+ BROADCAST(r) */
-        n.* EXCEPT (payment_type, rand_val),
+        n.vendor_id,
+        n.tpep_pickup_datetime,
+        n.tpep_dropoff_datetime,
+        n.ratecode_id,
+        n.pu_location_id,
+        n.do_location_id,
+        n.passenger_count,
+        n.trip_distance,
+        n.fare_amount,
+        n.extra,
+        n.mta_tax,
+        n.tip_amt,
+        n.tolls_amt,
+        n.congestion_surcharge,
+        n.cbd_congestion_fee,
+        n.improvement_surcharge,
+        n.total_amt,
+        n.true_total_amt,
+        n.comparation_total_amt,
+        n.trip_type,
         COALESCE(n.payment_type, r.payment_type) AS payment_type
     FROM (
         SELECT *, RAND() AS rand_val
@@ -188,17 +226,17 @@ nulls_third_filter AS (
 -- 8. Outliers management
 stats_percentiles AS (
     SELECT
-        PERCENTILE(trip_distance,         0.99) AS p99_trip_distance,
-        PERCENTILE(fare_amount,           0.99) AS p99_fare_amount,
-        PERCENTILE(extra,                 0.99) AS p99_extra,
-        PERCENTILE(mta_tax,               0.99) AS p99_mta_tax,
-        PERCENTILE(tip_amt,               0.99) AS p99_tip_amt,
-        PERCENTILE(tolls_amt,             0.99) AS p99_tolls_amt,
-        PERCENTILE(congestion_surcharge,  0.99) AS p99_congestion_surcharge,
-        PERCENTILE(cbd_congestion_fee,    0.99) AS p99_cbd_congestion_fee,
-        PERCENTILE(improvement_surcharge, 0.99) AS p99_improvement_surcharge,
-        PERCENTILE(total_amt,             0.99) AS p99_total_amt,
-        PERCENTILE(true_total_amt,        0.99) AS p99_true_total_amt
+        approx_percentile(trip_distance,         0.99, 10000) AS p99_trip_distance,
+        approx_percentile(fare_amount,           0.99, 10000) AS p99_fare_amount,
+        approx_percentile(extra,                 0.99, 10000) AS p99_extra,
+        approx_percentile(mta_tax,               0.99, 10000) AS p99_mta_tax,
+        approx_percentile(tip_amt,               0.99, 10000) AS p99_tip_amt,
+        approx_percentile(tolls_amt,             0.99, 10000) AS p99_tolls_amt,
+        approx_percentile(congestion_surcharge,  0.99, 10000) AS p99_congestion_surcharge,
+        approx_percentile(cbd_congestion_fee,    0.99, 10000) AS p99_cbd_congestion_fee,
+        approx_percentile(improvement_surcharge, 0.99, 10000) AS p99_improvement_surcharge,
+        approx_percentile(total_amt,             0.99, 10000) AS p99_total_amt,
+        approx_percentile(true_total_amt,        0.99, 10000) AS p99_true_total_amt
     FROM nulls_third_filter
 ),
 
@@ -220,22 +258,27 @@ calculated_max AS (
 
 atypical_amount_values_fixing AS (
     SELECT /*+ BROADCAST(c) */
-        n.* EXCEPT (
-            trip_distance, fare_amount, extra, mta_tax, tip_amt,
-            tolls_amt, congestion_surcharge, cbd_congestion_fee,
-            improvement_surcharge, total_amt, true_total_amt
-        ),
+        n.vendor_id,
+        n.tpep_pickup_datetime,
+        n.tpep_dropoff_datetime,
+        n.ratecode_id,
+        n.pu_location_id,
+        n.do_location_id,
+        n.passenger_count,
+        n.comparation_total_amt,
+        n.congestion_surcharge,
+        n.payment_type,
+        n.trip_type,
+        n.mta_tax,
+        n.extra,
+        n.cbd_congestion_fee,
+        n.improvement_surcharge,
         CASE WHEN n.trip_distance > c.max_trip_distance                   THEN c.max_trip_distance                   ELSE n.trip_distance                   END AS trip_distance,
         CASE WHEN n.fare_amount > c.max_fare_amount                       THEN c.max_fare_amount                     ELSE n.fare_amount                     END AS fare_amount,
-        CASE WHEN n.extra > c.max_extra                                   THEN c.max_extra                           ELSE n.extra                           END AS extra,
-        CASE WHEN n.mta_tax > c.max_mta_tax                               THEN c.max_mta_tax                         ELSE n.mta_tax                         END AS mta_tax,
         CASE WHEN n.tip_amt > c.max_tip_amt                               THEN c.max_tip_amt                         ELSE n.tip_amt                         END AS tip_amt,
         CASE WHEN n.tolls_amt > c.max_tolls_amt                           THEN c.max_tolls_amt                       ELSE n.tolls_amt                       END AS tolls_amt,
-        CASE WHEN n.congestion_surcharge > c.max_congestion_surcharge     THEN c.max_congestion_surcharge             ELSE n.congestion_surcharge             END AS congestion_surcharge,
-        CASE WHEN n.cbd_congestion_fee > c.max_cbd_congestion_fee         THEN c.max_cbd_congestion_fee               ELSE n.cbd_congestion_fee               END AS cbd_congestion_fee,
-        CASE WHEN n.improvement_surcharge > c.max_improvement_surcharge   THEN c.max_improvement_surcharge           ELSE n.improvement_surcharge           END AS improvement_surcharge,
         CASE WHEN n.total_amt > c.max_total_amt                           THEN c.max_total_amt                       ELSE n.total_amt                       END AS total_amt,
-        CASE WHEN n.true_total_amt > c.max_true_total_amt                 THEN c.max_true_total_amt                   ELSE n.true_total_amt                   END AS true_total_amt,
+        CASE WHEN n.true_total_amt > c.max_true_total_amt                 THEN c.max_true_total_amt                  ELSE n.true_total_amt                  END AS true_total_amt,
         -- Columnas de particion
         CAST({{ var("anio") }} AS INTEGER) AS anio,
         CAST({{ var("mes") }}  AS INTEGER) AS mes
