@@ -1,6 +1,9 @@
 from airflow import DAG
-from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+from airflow.providers.standard.operators.python import PythonOperator
 from datetime import datetime, timezone
+import requests
+import time
+import os
 
 def generar_periodos(anio_inicio, anio_fin):
     periodos = []
@@ -12,25 +15,62 @@ def generar_periodos(anio_inicio, anio_fin):
             periodos.append((anio, mes))
     return periodos
 
+def get_token():
+    base = os.environ["AIRFLOW_API_URL"]
+    r = requests.post(
+        f"{base}/auth/token",
+        json={
+            "username": os.environ["AIRFLOW_API_USER"],
+            "password": os.environ["AIRFLOW_API_PASS"],
+        },
+    )
+    r.raise_for_status()
+    return r.json()["access_token"]
+
+def ejecutar_pipeline(dag_id, anio_inicio, anio_fin, **context):
+    base = os.environ["AIRFLOW_API_URL"]
+    token = get_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    for anio, mes in generar_periodos(anio_inicio, anio_fin):
+        logical_date = datetime.now(tz=timezone.utc).isoformat()
+
+        r = requests.post(
+            f"{base}/api/v2/dags/{dag_id}/dagRuns",
+            json={"logical_date": logical_date, "conf": {"anio": anio, "mes": mes}},
+            headers=headers,
+        )
+        if not r.ok:
+            raise Exception(f"Error {r.status_code}: {r.text}")
+
+        dag_run_id = r.json()["dag_run_id"]
+
+        while True:
+            r = requests.get(
+                f"{base}/api/v2/dags/{dag_id}/dagRuns/{dag_run_id}",
+                headers=headers,
+            )
+            state = r.json().get("state")
+            if state == "success":
+                break
+            if state == "failed":
+                raise Exception(f"Pipeline falló: {anio}-{mes:02d}")
+            time.sleep(60)
+
 with DAG(
     dag_id='green_orquestador',
     schedule=None,
     start_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
     catchup=False,
-    max_active_tasks=1,
     tags=['green', 'orquestador'],
 ) as dag:
-    anterior = None
-    for anio, mes in generar_periodos(2013, 2026):
-        t = TriggerDagRunOperator(
-            task_id=f'trigger_{anio}_{mes:02d}',
-            trigger_dag_id='green_staging_pipeline',
-            conf={'anio': anio, 'mes': mes},
-            wait_for_completion=True,
-            poke_interval=60,
-            allowed_states=['success'],
-            failed_states=['failed'],
-        )
-        if anterior:
-            anterior >> t
-        anterior = t
+    PythonOperator(
+        task_id='ejecutar_todos_los_meses',
+        python_callable=ejecutar_pipeline,
+        op_kwargs={
+            'dag_id': 'green_staging_pipeline',
+            'anio_inicio': 2018,
+            'anio_fin': 2026,
+        },
+        execution_timeout=None,
+    )
