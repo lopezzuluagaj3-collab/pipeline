@@ -2,7 +2,7 @@
   config(
     materialized='table',
     file_format='parquet',
-    location_root='s3a://sirius-logs-riwi/tlc/staging/fhv/año=' ~ var("anio") ~ '/mes=' ~ "%02d" | format(var("mes") | int),
+    location_root='s3a://sirius-logs-riwi/tlc/staging/fhv/anio=' ~ var("anio") ~ '/mes=' ~ "%02d" | format(var("mes") | int),
     pre_hook=[
       "CREATE OR REPLACE TEMPORARY VIEW fhv_source USING parquet OPTIONS (path 's3a://sirius-logs-riwi/tlc/raw/fhv/" ~ var("anio") ~ "/fhv_tripdata_" ~ var("anio") ~ "-" ~ "%02d" | format(var("mes") | int) ~ ".parquet')"
     ]
