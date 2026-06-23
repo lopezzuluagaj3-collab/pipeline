@@ -69,7 +69,7 @@ with DAG(
         python_callable=ejecutar_pipeline,
         op_kwargs={
             'dag_id': 'fhvhv_staging_pipeline',
-            'anio_inicio': 2021,
+            'anio_inicio': 2025,
             'anio_fin': 2026,
         },
         execution_timeout=None,
