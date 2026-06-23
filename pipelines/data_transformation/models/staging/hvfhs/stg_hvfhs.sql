@@ -7,7 +7,7 @@
       "SET spark.sql.shuffle.partitions = 600",
       "SET spark.sql.adaptive.enabled = true",
       "SET spark.sql.adaptive.coalescePartitions.enabled = true",
-      "CREATE OR REPLACE TEMPORARY VIEW fhvhv_source AS SELECT * REPLACE({% if var('anio') | int < 2025 %}CAST(0.0 AS DOUBLE){% else %}CAST(cbd_congestion_fee AS DOUBLE){% endif %} AS cbd_congestion_fee) FROM parquet.`s3a://sirius-logs-riwi/tlc/raw/fhvhv/" ~ var("anio") ~ "/fhvhv_tripdata_" ~ var("anio") ~ "-" ~ "%02d" | format(var("mes") | int) ~ ".parquet`"
+      "CREATE OR REPLACE TEMPORARY VIEW fhvhv_source AS SELECT hvfhs_license_num, dispatching_base_num, originating_base_num, request_datetime, on_scene_datetime, pickup_datetime, dropoff_datetime, PULocationID, DOLocationID, trip_miles, trip_time, base_passenger_fare, tolls, bcf, sales_tax, congestion_surcharge, airport_fee, tips, driver_pay, shared_request_flag, shared_match_flag, access_a_ride_flag, wav_request_flag, wav_match_flag, {% if var('anio') | int < 2025 %}CAST(0.0 AS DOUBLE){% else %}CAST(cbd_congestion_fee AS DOUBLE){% endif %} AS cbd_congestion_fee FROM parquet.`s3a://sirius-logs-riwi/tlc/raw/fhvhv/" ~ var("anio") ~ "/fhvhv_tripdata_" ~ var("anio") ~ "-" ~ "%02d" | format(var("mes") | int) ~ ".parquet`"
     ]
   )
 }}
