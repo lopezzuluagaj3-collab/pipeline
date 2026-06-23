@@ -2,12 +2,12 @@
   config(
     materialized='table',
     file_format='parquet',
-    location_root='s3a://sirius-logs-riwi/tlc/staging/green/anio=' ~ var("anio") ~ '/mes=' ~ "%02d" | format(var("mes") | int),
+    location_root='s3a://sirius-logs-riwi/tlc/staging/fhvhv/anio=' ~ var("anio") ~ '/mes=' ~ "%02d" | format(var("mes") | int),
     pre_hook=[
-      "SET spark.sql.shuffle.partitions = 11",
+      "SET spark.sql.shuffle.partitions = 600",
       "SET spark.sql.adaptive.enabled = true",
       "SET spark.sql.adaptive.coalescePartitions.enabled = true",
-      "CREATE OR REPLACE TEMPORARY VIEW green_source AS SELECT *, {% if var('anio') | int < 2025 %}CAST(0.0 AS DOUBLE){% else %}CAST(cbd_congestion_fee AS DOUBLE){% endif %} AS cbd_congestion_fee FROM parquet.`s3a://sirius-logs-riwi/tlc/raw/green/" ~ var("anio") ~ "/green_tripdata_" ~ var("anio") ~ "-" ~ "%02d" | format(var("mes") | int) ~ ".parquet`"
+      "CREATE OR REPLACE TEMPORARY VIEW fhvhv_source AS SELECT * EXCEPT(cbd_congestion_fee), {% if var('anio') | int < 2025 %}CAST(0.0 AS DOUBLE){% else %}CAST(cbd_congestion_fee AS DOUBLE){% endif %} AS cbd_congestion_fee FROM parquet.`s3a://sirius-logs-riwi/tlc/raw/fhvhv/" ~ var("anio") ~ "/fhvhv_tripdata_" ~ var("anio") ~ "-" ~ "%02d" | format(var("mes") | int) ~ ".parquet`"
     ]
   )
 }}
