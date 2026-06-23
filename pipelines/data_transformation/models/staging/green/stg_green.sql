@@ -7,7 +7,7 @@
       "SET spark.sql.shuffle.partitions = 600",
       "SET spark.sql.adaptive.enabled = true",
       "SET spark.sql.adaptive.coalescePartitions.enabled = true",
-      "CREATE OR REPLACE TEMPORARY VIEW green_source AS SELECT * EXCEPT(cbd_congestion_fee), {% if var('anio') | int < 2025 %}CAST(0.0 AS DOUBLE){% else %}CAST(cbd_congestion_fee AS DOUBLE){% endif %} AS cbd_congestion_fee FROM parquet.`s3a://sirius-logs-riwi/tlc/raw/green/" ~ var("anio") ~ "/green_tripdata_" ~ var("anio") ~ "-" ~ "%02d" | format(var("mes") | int) ~ ".parquet`"
+      "CREATE OR REPLACE TEMPORARY VIEW green_source AS SELECT VendorID, lpep_pickup_datetime, lpep_dropoff_datetime, store_and_fwd_flag, RatecodeID, PULocationID, DOLocationID, passenger_count, trip_distance, fare_amount, extra, mta_tax, tip_amount, tolls_amount, ehail_fee, improvement_surcharge, total_amount, payment_type, trip_type, congestion_surcharge, {% if var('anio') | int < 2025 %}CAST(0.0 AS DOUBLE){% else %}CAST(cbd_congestion_fee AS DOUBLE){% endif %} AS cbd_congestion_fee FROM parquet.`s3a://sirius-logs-riwi/tlc/raw/green/" ~ var("anio") ~ "/green_tripdata_" ~ var("anio") ~ "-" ~ "%02d" | format(var("mes") | int) ~ ".parquet`"
     ]
   )
 }}
