@@ -11,10 +11,10 @@ import sys
 LOADER_PATH = "/opt/airflow/dags/current/pipelines/scripts"
 
 FORMATOS = {
-    "fhv":    ("tlc/staging/fhv/",    "raw.fhv"),
-    "hvfhs":  ("tlc/staging/fhvhv/",  "raw.hvfhs"),
-    "green":  ("tlc/staging/green/",  "raw.green"),
-    "yellow": ("tlc/staging/yellow/", "raw.yellow"),
+    "fhv":    ("tlc/staging/fhv/",    "staging.fhv"),
+    "hvfhs":  ("tlc/staging/fhvhv/",  "staging.hvfhs"),
+    "green":  ("tlc/staging/green/",  "staging.green"),
+    "yellow": ("tlc/staging/yellow/", "staging.yellow"),
 }
 # ──────────────────────────────────────────────────────────────────────────────
 
