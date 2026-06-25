@@ -29,7 +29,7 @@ DBT_BASE = (
 
 
 def _get_config():
-    load_dotenv("/home/ubuntu/pipeline/worker/.env")
+    load_dotenv()
     return {
         "bucket":     os.environ["S3_BUCKET"],
         "aws_region": os.environ.get("AWS_REGION", "us-east-2"),
