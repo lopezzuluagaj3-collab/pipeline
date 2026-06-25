@@ -2,23 +2,14 @@ from airflow import DAG
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
+from dotenv import load_dotenv
 from datetime import datetime, timezone
 import os
 import sys
 
+# ─── Estáticos (no dependen del entorno) ──────────────────────────────────────
+LOADER_PATH = "/opt/airflow/dags/current/pipelines/scripts"
 
-BUCKET     = os.environ["S3_BUCKET"]
-AWS_REGION = os.environ.get("AWS_REGION", "us-east-2")
-
-PG_CONN = {
-    "host":     os.environ["PG_HOST"],
-    "port":     int(os.environ.get("PG_PORT")),
-    "dbname":   os.environ["PG_DBNAME"],
-    "user":     os.environ["PG_USER"],
-    "password": os.environ["PG_PASSWORD"],
-}
-
-# Mapeo: nombre → (prefix en S3, tabla destino)
 FORMATOS = {
     "fhv":    ("staging/fhv/",    "raw.fhv"),
     "hvfhs":  ("staging/hvfhs/",  "raw.hvfhs"),
@@ -26,9 +17,7 @@ FORMATOS = {
     "yellow": ("staging/yellow/", "raw.yellow"),
 }
 
-LOADER_PATH = "/opt/airflow/dags/current/pipelines/scripts"  
-
-DBT_CMD = "/home/airflow/.local/bin/dbt run"
+DBT_CMD  = "/home/airflow/.local/bin/dbt run"
 DBT_BASE = (
     "--profiles-dir /opt/airflow/.dbt "
     "--project-dir /opt/airflow/dags/current/pipelines/data_transformation "
@@ -39,18 +28,33 @@ DBT_BASE = (
 )
 
 
+def _get_config():
+    load_dotenv("/home/ubuntu/pipeline/worker/.env")
+    return {
+        "bucket":     os.environ["S3_BUCKET"],
+        "aws_region": os.environ.get("AWS_REGION", "us-east-2"),
+        "pg_conn": {
+            "host":     os.environ["PG_HOST"],
+            "port":     int(os.environ.get("PG_PORT", 5432)),
+            "dbname":   os.environ["PG_DBNAME"],
+            "user":     os.environ["PG_USER"],
+            "password": os.environ["PG_PASSWORD"],
+        }
+    }
 
 def _cargar_formato(formato: str):
+    config = _get_config()
     sys.path.insert(0, LOADER_PATH)
     from s3_to_postgres_loader import cargar_formato
     prefix, tabla = FORMATOS[formato]
     cargar_formato(
-        bucket=BUCKET,
+        bucket=config["bucket"],
         prefix=prefix,
         tabla=tabla,
-        pg_conn_params=PG_CONN,
-        aws_region=AWS_REGION,
+        pg_conn_params=config["pg_conn"],
+        aws_region=config["aws_region"],
     )
+
 
 
 with DAG(
