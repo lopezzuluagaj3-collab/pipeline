@@ -7,7 +7,7 @@ import os
 import sys
 
 
-BUCKET     = os.environ["sirius-logs-riwi"]
+BUCKET     = os.environ["S3_BUCKET"]
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-2")
 
 PG_CONN = {
