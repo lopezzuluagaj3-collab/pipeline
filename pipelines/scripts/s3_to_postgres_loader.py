@@ -21,23 +21,25 @@ def listar_archivos_parquet(s3_client, bucket: str, prefix: str) -> list[str]:
 
 
 def cargar_archivo(s3_client, bucket: str, key: str, conn, tabla: str) -> int:
-    """Lee un archivo .parquet desde S3 y lo carga a Postgres via COPY."""
+    """Lee un archivo .parquet desde S3 y lo carga a Postgres via COPY respetando las columnas."""
     obj = s3_client.get_object(Bucket=bucket, Key=key)
     tabla_arrow = pq.read_table(io.BytesIO(obj["Body"].read()))
     df = tabla_arrow.to_pandas()
 
+    columnas = [col.lower() for col in df.columns]
+    df.columns = columnas 
+    str_columnas = ", ".join(columnas)
     buffer = io.StringIO()
     df.to_csv(buffer, index=False, header=False, na_rep="\\N")
     buffer.seek(0)
 
     with conn.cursor() as cur:
         cur.copy_expert(
-            f"COPY {tabla} FROM STDIN WITH (FORMAT csv, NULL '\\N')",
+            f"COPY {tabla} ({str_columnas}) FROM STDIN WITH (FORMAT csv, NULL '\\N')",
             buffer
         )
     conn.commit()
     return len(df)
-
 
 def cargar_formato(
     bucket: str,

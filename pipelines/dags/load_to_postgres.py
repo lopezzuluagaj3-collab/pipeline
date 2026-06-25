@@ -1,9 +1,9 @@
 from airflow import DAG
-from airflow.providers.standard.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from dotenv import load_dotenv
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 import os
 import sys
 
@@ -11,11 +11,12 @@ import sys
 LOADER_PATH = "/opt/airflow/dags/current/pipelines/scripts"
 
 FORMATOS = {
-    "fhv":    ("staging/fhv/",    "raw.fhv"),
-    "hvfhs":  ("staging/hvfhs/",  "raw.hvfhs"),
-    "green":  ("staging/green/",  "raw.green"),
-    "yellow": ("staging/yellow/", "raw.yellow"),
+    "fhv":    ("tlc/staging/fhv/",    "raw.fhv"),
+    "hvfhs":  ("tlc/staging/fhvhv/",  "raw.hvfhs"),
+    "green":  ("tlc/staging/green/",  "raw.green"),
+    "yellow": ("tlc/staging/yellow/", "raw.yellow"),
 }
+# ──────────────────────────────────────────────────────────────────────────────
 
 DBT_CMD  = "/home/airflow/.local/bin/dbt run"
 DBT_BASE = (
@@ -46,6 +47,7 @@ def _cargar_formato(formato: str):
     config = _get_config()
     sys.path.insert(0, LOADER_PATH)
     from s3_to_postgres_loader import cargar_formato
+    config = _get_config()
     prefix, tabla = FORMATOS[formato]
     cargar_formato(
         bucket=config["bucket"],
@@ -72,49 +74,30 @@ with DAG(
         python_callable=_cargar_formato,
         op_args=["fhv"],
     )
-    dbt_fhv = BashOperator(
-        task_id="model_fhv",
-        bash_command=f"{DBT_CMD} --select warehouse.fhv {DBT_BASE}",
-    )
-
 
     cargar_hvfhs = PythonOperator(
         task_id="load_hvfhs",
         python_callable=_cargar_formato,
         op_args=["hvfhs"],
     )
-    dbt_hvfhs = BashOperator(
-        task_id="model_hvfhs",
-        bash_command=f"{DBT_CMD} --select warehouse.hvfhs {DBT_BASE}",
-    )
-
 
     cargar_green = PythonOperator(
         task_id="load_green",
         python_callable=_cargar_formato,
         op_args=["green"],
     )
-    dbt_green = BashOperator(
-        task_id="model_green",
-        bash_command=f"{DBT_CMD} --select warehouse.green {DBT_BASE}",
-    )
-
 
     cargar_yellow = PythonOperator(
         task_id="load_yellow",
         python_callable=_cargar_formato,
         op_args=["yellow"],
     )
-    dbt_yellow = BashOperator(
-        task_id="model_yellow",
-        bash_command=f"{DBT_CMD} --select warehouse.yellow {DBT_BASE}",
-    )
 
-    # ── Secuencia ─────────────────────────────────────────────────────────────
+
     (
         inicio
-        >> cargar_fhv   >> dbt_fhv
-        >> cargar_hvfhs >> dbt_hvfhs
-        >> cargar_green >> dbt_green
-        >> cargar_yellow >> dbt_yellow
+        >> cargar_fhv
+        >> cargar_hvfhs
+        >> cargar_green
+        >> cargar_yellow
     )
