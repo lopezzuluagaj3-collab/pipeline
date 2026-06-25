@@ -1,0 +1,145 @@
+version: 2
+
+models:
+
+  - name: dim_green_vendor
+    description: "Dimensión de proveedores del servicio de taxi green. Tabla estática del diccionario TLC."
+    columns:
+      - name: vendor_id
+        description: "PK — ID del proveedor"
+        tests:
+          - unique
+          - not_null
+      - name: vendor_name
+        description: "Nombre completo del proveedor"
+      - name: vendor_short_name
+        description: "Abreviatura del proveedor"
+
+  - name: dim_green_ratecode
+    description: "Dimensión de códigos de tarifa. Tabla estática del diccionario TLC."
+    columns:
+      - name: ratecode_id
+        description: "PK — Código de tarifa"
+        tests:
+          - unique
+          - not_null
+      - name: ratecode_description
+        description: "Descripción del tipo de tarifa"
+      - name: ratecode_code
+        description: "Código corto de la tarifa"
+
+  - name: dim_green_payment_type
+    description: "Dimensión de tipos de pago. Tabla estática del diccionario TLC."
+    columns:
+      - name: payment_type_id
+        description: "PK — ID del tipo de pago"
+        tests:
+          - unique
+          - not_null
+      - name: payment_type_description
+        description: "Descripción del método de pago"
+      - name: is_electronic
+        description: "TRUE si el pago fue electrónico (tarjeta)"
+
+  - name: dim_green_trip_type
+    description: "Dimensión del tipo de viaje. Solo aplica a green taxi. Tabla estática."
+    columns:
+      - name: trip_type_id
+        description: "PK — ID del tipo de viaje (1=street-hail, 2=dispatch)"
+        tests:
+          - unique
+          - not_null
+      - name: trip_type_description
+        description: "Nombre del tipo de viaje"
+      - name: trip_type_detail
+        description: "Explicación detallada del tipo de viaje"
+
+  - name: dim_green_datetime
+    description: >
+      Dimensión de tiempo con granularidad horaria.
+      Construida a partir de los timestamps únicos de pickup y dropoff en los datos de green taxi.
+    columns:
+      - name: datetime_id
+        description: "PK — Timestamp truncado a la hora"
+        tests:
+          - unique
+          - not_null
+      - name: full_date
+        description: "Fecha sin hora"
+      - name: year
+        description: "Año"
+      - name: month
+        description: "Mes (1-12)"
+      - name: day
+        description: "Día del mes"
+      - name: hour
+        description: "Hora del día (0-23)"
+      - name: day_of_week
+        description: "Día de la semana (0=domingo, 6=sábado)"
+      - name: week_of_year
+        description: "Semana del año (1-53)"
+      - name: quarter
+        description: "Trimestre del año (1-4)"
+      - name: is_weekend
+        description: "TRUE si es sábado o domingo"
+      - name: season
+        description: "Estación del año (Winter/Spring/Summer/Fall)"
+      - name: time_of_day
+        description: "Franja horaria (Morning/Afternoon/Evening/Night)"
+      - name: is_rush_hour
+        description: "TRUE si es hora pico en día de semana (7-9am ó 4-7pm)"
+
+  - name: dim_green_location
+    description: >
+      Dimensión de zonas geográficas TLC. 
+      Construida con los location_id que aparecen en los datos.
+      Para enriquecer con nombres de zonas reales, hacer JOIN con la tabla de zonas del TLC.
+    columns:
+      - name: location_id
+        description: "PK — ID de la zona TLC"
+        tests:
+          - unique
+          - not_null
+      - name: zone_name
+        description: "Nombre de la zona (genérico si no está en el diccionario)"
+      - name: borough
+        description: "Borough de NYC (Manhattan, Queens, Brooklyn, Bronx, Staten Island, EWR)"
+      - name: service_zone
+        description: "Tipo de zona de servicio (Airports, Boro Zone, Yellow Zone)"
+
+  - name: fact_green_trips
+    description: >
+      Tabla central de hechos del esquema estrella para viajes green taxi.
+      Granularidad: 1 fila = 1 viaje.
+      Relacionada con todas las dimensiones mediante FKs naturales/surrogadas.
+    columns:
+      - name: trip_id
+        description: "PK surrogate — MD5 de vendor_id + pickup + dropoff + pu_location + do_location"
+        tests:
+          - not_null
+      - name: pickup_datetime_id
+        description: "FK → dim_green_datetime (truncado a la hora)"
+      - name: dropoff_datetime_id
+        description: "FK → dim_green_datetime (truncado a la hora)"
+      - name: vendor_id
+        description: "FK → dim_green_vendor"
+      - name: ratecode_id
+        description: "FK → dim_green_ratecode"
+      - name: pu_location_id
+        description: "FK → dim_green_location (zona de recogida)"
+      - name: do_location_id
+        description: "FK → dim_green_location (zona de destino)"
+      - name: payment_type_id
+        description: "FK → dim_green_payment_type"
+      - name: trip_type_id
+        description: "FK → dim_green_trip_type"
+      - name: trip_duration_min
+        description: "Duración del viaje en minutos (medida derivada)"
+      - name: fare_per_mile
+        description: "Tarifa base dividida entre la distancia en millas"
+      - name: revenue_per_min
+        description: "Ingreso total del viaje dividido entre la duración en minutos"
+      - name: has_tip
+        description: "TRUE si el pasajero dejó propina"
+      - name: is_card_payment
+        description: "TRUE si el pago fue con tarjeta de crédito"

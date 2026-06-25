@@ -1,0 +1,45 @@
+version: 2
+
+models:
+
+  - name: dim_fhv_base
+    description: "Dimensión de bases TLC que operan viajes FHV. Construida desde los datos."
+    columns:
+      - name: base_num
+        description: "PK — Número de base TLC"
+        tests:
+          - unique
+          - not_null
+      - name: base_name
+        description: "Nombre descriptivo de la base"
+
+  - name: dim_fhv_datetime
+    description: "Dimensión de fecha/hora para viajes FHV. Granularidad horaria."
+    columns:
+      - name: datetime_id
+        description: "PK — Timestamp truncado a la hora"
+        tests:
+          - unique
+          - not_null
+
+  - name: fact_fhv_trips
+    description: >
+      Tabla central de hechos para viajes FHV.
+      FHV es el más simple: no tiene montos ni zonas geográficas
+      (excluidos en staging por alto porcentaje de nulos).
+      Granularidad: 1 fila = 1 viaje.
+    columns:
+      - name: trip_id
+        description: "PK surrogate — MD5 de los campos identificadores del viaje"
+        tests:
+          - not_null
+      - name: pickup_datetime_id
+        description: "FK → dim_fhv_datetime"
+      - name: dropoff_datetime_id
+        description: "FK → dim_fhv_datetime"
+      - name: dispatching_base_num
+        description: "FK → dim_fhv_base (base que despachó el viaje)"
+      - name: affiliated_base_number
+        description: "FK → dim_fhv_base (base afiliada al vehículo)"
+      - name: trip_duration_min
+        description: "Duración del viaje en minutos"

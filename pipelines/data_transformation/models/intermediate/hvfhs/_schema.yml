@@ -1,0 +1,80 @@
+version: 2
+
+models:
+
+  - name: dim_hvfhs_license
+    description: "Dimensión de operadores HVFHS (Uber, Lyft, Via, Juno). Tabla estática del TLC."
+    columns:
+      - name: hvfhs_license_num
+        description: "PK — Número de licencia HVFHS (ej: HV0003=Uber)"
+        tests:
+          - unique
+          - not_null
+      - name: operator_name
+        description: "Nombre corto del operador"
+      - name: operator_detail
+        description: "Nombre completo del operador"
+      - name: is_active
+        description: "TRUE si el operador sigue activo en NYC"
+
+  - name: dim_hvfhs_location
+    description: "Dimensión de zonas TLC para HVFHS. Construida desde los datos."
+    columns:
+      - name: location_id
+        description: "PK — ID de zona TLC"
+        tests:
+          - unique
+          - not_null
+      - name: zone_name
+        description: "Nombre de la zona"
+      - name: borough
+        description: "Borough de NYC"
+      - name: service_zone
+        description: "Tipo de zona de servicio"
+
+  - name: dim_hvfhs_datetime
+    description: >
+      Dimensión de fecha/hora para HVFHS. Granularidad horaria.
+      Incluye timestamps de request, pickup y dropoff.
+    columns:
+      - name: datetime_id
+        description: "PK — Timestamp truncado a la hora"
+        tests:
+          - unique
+          - not_null
+
+  - name: fact_hvfhs_trips
+    description: >
+      Tabla central de hechos para viajes HVFHS (Uber, Lyft, Via).
+      Es el más completo de los 4 tipos: tiene montos, zonas,
+      timestamps de request/on_scene y flags de servicio especial.
+      Granularidad: 1 fila = 1 viaje.
+    columns:
+      - name: trip_id
+        description: "PK surrogate — MD5 de los campos identificadores"
+        tests:
+          - not_null
+      - name: request_datetime_id
+        description: "FK → dim_hvfhs_datetime (momento de solicitud)"
+      - name: pickup_datetime_id
+        description: "FK → dim_hvfhs_datetime (momento de recogida)"
+      - name: dropoff_datetime_id
+        description: "FK → dim_hvfhs_datetime (momento de llegada)"
+      - name: hvfhs_license_num
+        description: "FK → dim_hvfhs_license"
+      - name: pu_location_id
+        description: "FK → dim_hvfhs_location (zona de recogida)"
+      - name: do_location_id
+        description: "FK → dim_hvfhs_location (zona de destino)"
+      - name: trip_duration_min
+        description: "Duración del viaje en minutos"
+      - name: wait_time_min
+        description: "Tiempo de espera en minutos (desde solicitud hasta llegada del conductor)"
+      - name: fare_per_mile
+        description: "Tarifa base dividida entre la distancia"
+      - name: revenue_per_min
+        description: "Ingreso total dividido entre duración en minutos"
+      - name: has_tip
+        description: "TRUE si el pasajero dejó propina"
+      - name: is_wav_trip
+        description: "TRUE si el viaje fue atendido con vehículo accesible para silla de ruedas"

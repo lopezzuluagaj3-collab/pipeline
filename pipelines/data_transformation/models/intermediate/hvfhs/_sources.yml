@@ -1,0 +1,65 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: formato_2
+        description: "Datos HVFHS (High Volume For-Hire Service: Uber, Lyft, Via) con staging aplicado"
+        columns:
+          - name: hvfhs_license_num
+            description: "Licencia del operador HVFHS (HV0002=Juno, HV0003=Uber, HV0004=Via, HV0005=Lyft)"
+          - name: dispatching_base_num
+            description: "Número de base TLC que despachó el viaje"
+          - name: request_datetime
+            description: "Momento en que el pasajero solicitó el viaje"
+          - name: on_scene_datetime
+            description: "Momento en que el conductor llegó al punto de recogida"
+          - name: tpep_pickup_datetime
+            description: "Fecha y hora de recogida del pasajero"
+          - name: tpep_dropoff_datetime
+            description: "Fecha y hora de llegada al destino"
+          - name: pu_location_id
+            description: "ID de zona TLC de recogida"
+          - name: do_location_id
+            description: "ID de zona TLC de destino"
+          - name: trip_distance
+            description: "Distancia del viaje en millas"
+          - name: trip_time
+            description: "Duración del viaje en segundos"
+          - name: fare_amount
+            description: "Tarifa base del pasajero (base_passenger_fare)"
+          - name: tolls_amt
+            description: "Peajes"
+          - name: bcf
+            description: "Black Car Fund (fondo regulatorio)"
+          - name: sales_tax
+            description: "Impuesto de ventas"
+          - name: congestion_surcharge
+            description: "Cargo por congestión"
+          - name: airport_fee
+            description: "Cargo de aeropuerto"
+          - name: tip_amt
+            description: "Propina del pasajero"
+          - name: cbd_congestion_fee
+            description: "Cargo por congestión CBD (desde 2025)"
+          - name: total_amt
+            description: "Pago al conductor (driver_pay)"
+          - name: true_total_amt
+            description: "Total calculado sumando todos los componentes"
+          - name: comparation_total_amt
+            description: "TRUE si true_total_amt difiere de total_amt"
+          - name: shared_request_flag
+            description: "Pasajero solicitó viaje compartido"
+          - name: shared_match_flag
+            description: "Viaje fue efectivamente compartido"
+          - name: access_a_ride_flag
+            description: "Viaje del programa Access-A-Ride (movilidad reducida)"
+          - name: wav_request_flag
+            description: "Pasajero solicitó vehículo accesible para silla de ruedas"
+          - name: wav_match_flag
+            description: "Viaje fue atendido con vehículo accesible"
+          - name: anio
+            description: "Año del viaje"
+          - name: mes
+            description: "Mes del viaje"

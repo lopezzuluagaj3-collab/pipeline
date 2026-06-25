@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: formato_1
+        description: "Datos FHV (For-Hire Vehicle) con staging aplicado"
+        columns:
+          - name: dispatching_base_num
+            description: "Número de base TLC que despachó el viaje"
+          - name: affiliated_base_number
+            description: "Número de base TLC afiliada al vehículo"
+          - name: tpep_pickup_datetime
+            description: "Fecha y hora de recogida"
+          - name: tpep_dropoff_datetime
+            description: "Fecha y hora de llegada"
+          - name: anio
+            description: "Año del viaje"
+          - name: mes
+            description: "Mes del viaje"

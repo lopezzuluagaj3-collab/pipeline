@@ -1,0 +1,122 @@
+version: 2
+
+models:
+
+  - name: dim_yellow_vendor
+    description: "Dimensión de proveedores del taxi Yellow. Tabla estática del TLC."
+    columns:
+      - name: vendor_id
+        description: "PK — ID del proveedor"
+        tests:
+          - unique
+          - not_null
+      - name: vendor_name
+        description: "Nombre completo del proveedor"
+      - name: vendor_short_name
+        description: "Abreviatura del proveedor"
+
+  - name: dim_yellow_ratecode
+    description: "Dimensión de códigos de tarifa para Yellow Taxi. Tabla estática del TLC."
+    columns:
+      - name: ratecode_id
+        description: "PK — Código de tarifa"
+        tests:
+          - unique
+          - not_null
+      - name: ratecode_description
+        description: "Descripción del tipo de tarifa"
+      - name: ratecode_code
+        description: "Código corto"
+
+  - name: dim_yellow_payment_type
+    description: "Dimensión de tipos de pago para Yellow Taxi. Tabla estática del TLC."
+    columns:
+      - name: payment_type_id
+        description: "PK — ID del tipo de pago"
+        tests:
+          - unique
+          - not_null
+      - name: payment_type_description
+        description: "Descripción del método de pago"
+      - name: is_electronic
+        description: "TRUE si el pago fue electrónico"
+
+  - name: dim_yellow_datetime
+    description: >
+      Dimensión de fecha/hora para Yellow Taxi. Granularidad horaria.
+      Cubre desde 2009 hasta la fecha actual — puede ser muy grande.
+    columns:
+      - name: datetime_id
+        description: "PK — Timestamp truncado a la hora"
+        tests:
+          - unique
+          - not_null
+      - name: is_weekend
+        description: "TRUE si es sábado o domingo"
+      - name: season
+        description: "Estación del año"
+      - name: time_of_day
+        description: "Franja horaria (Morning/Afternoon/Evening/Night)"
+      - name: is_rush_hour
+        description: "TRUE si es hora pico en día de semana"
+
+  - name: dim_yellow_location
+    description: >
+      Dimensión de zonas TLC para Yellow Taxi. Construida desde los datos.
+      Incluye zonas Manhattan top hardcodeadas (usadas para imputar datos 2009-2010).
+    columns:
+      - name: location_id
+        description: "PK — ID de zona TLC"
+        tests:
+          - unique
+          - not_null
+      - name: zone_name
+        description: "Nombre de la zona"
+      - name: borough
+        description: "Borough de NYC"
+      - name: service_zone
+        description: "Tipo de zona de servicio"
+
+  - name: fact_yellow_trips
+    description: >
+      Tabla central de hechos para Yellow Taxi NYC.
+      Es el dataset histórico más completo: datos desde 2009.
+      
+      Diferencias vs Green:
+        - Tiene airport_fee (cargo JFK/LaGuardia)
+        - Tiene surcharge (improvement surcharge $0.30)
+        - NO tiene trip_type (exclusivo de green)
+        - comparation_total_amt es BOOLEAN
+
+      Granularidad: 1 fila = 1 viaje.
+    columns:
+      - name: trip_id
+        description: "PK surrogate — MD5 de los campos identificadores"
+        tests:
+          - not_null
+      - name: pickup_datetime_id
+        description: "FK → dim_yellow_datetime"
+      - name: dropoff_datetime_id
+        description: "FK → dim_yellow_datetime"
+      - name: vendor_id
+        description: "FK → dim_yellow_vendor"
+      - name: ratecode_id
+        description: "FK → dim_yellow_ratecode"
+      - name: pu_location_id
+        description: "FK → dim_yellow_location (zona de recogida)"
+      - name: do_location_id
+        description: "FK → dim_yellow_location (zona de destino)"
+      - name: payment_type_id
+        description: "FK → dim_yellow_payment_type"
+      - name: trip_duration_min
+        description: "Duración del viaje en minutos"
+      - name: fare_per_mile
+        description: "Tarifa base dividida entre la distancia en millas"
+      - name: revenue_per_min
+        description: "Ingreso total dividido entre duración en minutos"
+      - name: has_tip
+        description: "TRUE si el pasajero dejó propina"
+      - name: is_card_payment
+        description: "TRUE si el pago fue con tarjeta de crédito"
+      - name: is_airport_trip
+        description: "TRUE si el viaje tuvo cargo de aeropuerto (JFK o LaGuardia)"

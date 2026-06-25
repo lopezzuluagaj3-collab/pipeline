@@ -1,0 +1,56 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Tablas cargadas desde S3 staging a Postgres"
+    schema: raw
+    tables:
+      - name: formato_3
+        description: "Datos green taxi con staging aplicado (limpieza, tipado, outliers)"
+        columns:
+          - name: vendor_id
+            description: "ID del proveedor del taxi (1=Creative Mobile, 2=VeriFone)"
+          - name: tpep_pickup_datetime
+            description: "Fecha y hora de recogida del pasajero"
+          - name: tpep_dropoff_datetime
+            description: "Fecha y hora de llegada al destino"
+          - name: ratecode_id
+            description: "Código de tarifa aplicada al viaje"
+          - name: pu_location_id
+            description: "ID de la zona de recogida (TLC Taxi Zone)"
+          - name: do_location_id
+            description: "ID de la zona de destino (TLC Taxi Zone)"
+          - name: passenger_count
+            description: "Cantidad de pasajeros en el viaje"
+          - name: trip_distance
+            description: "Distancia del viaje en millas"
+          - name: fare_amount
+            description: "Tarifa base calculada por el taxímetro"
+          - name: extra
+            description: "Cargos extra (rush hour, overnight)"
+          - name: mta_tax
+            description: "Impuesto MTA de $0.50"
+          - name: tip_amt
+            description: "Propina del pasajero"
+          - name: tolls_amt
+            description: "Peajes pagados durante el viaje"
+          - name: congestion_surcharge
+            description: "Cargo por congestión"
+          - name: cbd_congestion_fee
+            description: "Cargo por congestión en el CBD (desde 2025)"
+          - name: improvement_surcharge
+            description: "Cargo de mejora de $0.30"
+          - name: total_amt
+            description: "Total reportado por el proveedor"
+          - name: true_total_amt
+            description: "Total calculado sumando todos los componentes"
+          - name: comparation_total_amt
+            description: "Diferencia entre total_amt y true_total_amt"
+          - name: payment_type
+            description: "Tipo de pago usado por el pasajero"
+          - name: trip_type
+            description: "Tipo de viaje (1=street-hail, 2=dispatch)"
+          - name: anio
+            description: "Año del viaje"
+          - name: mes
+            description: "Mes del viaje"

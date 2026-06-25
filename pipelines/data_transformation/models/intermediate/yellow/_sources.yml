@@ -1,0 +1,55 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: formato_4
+        description: "Datos Yellow Taxi con staging aplicado (2009-2026, normalización histórica incluida)"
+        columns:
+          - name: vendor_id
+            description: "ID del proveedor (1=Creative Mobile Technologies, 2=VeriFone)"
+          - name: tpep_pickup_datetime
+            description: "Fecha y hora de recogida"
+          - name: tpep_dropoff_datetime
+            description: "Fecha y hora de llegada"
+          - name: passenger_count
+            description: "Cantidad de pasajeros"
+          - name: trip_distance
+            description: "Distancia del viaje en millas"
+          - name: pu_location_id
+            description: "ID de zona TLC de recogida (264=Unknown para datos pre-2011)"
+          - name: do_location_id
+            description: "ID de zona TLC de destino (264=Unknown para datos pre-2011)"
+          - name: ratecode_id
+            description: "Código de tarifa aplicada"
+          - name: payment_type
+            description: "Tipo de pago (1=Credit card, 2=Cash, ...)"
+          - name: fare_amount
+            description: "Tarifa base del taxímetro"
+          - name: extra
+            description: "Cargos extra (rush hour, overnight)"
+          - name: tip_amt
+            description: "Propina"
+          - name: tolls_amt
+            description: "Peajes"
+          - name: total_amt
+            description: "Total reportado por el proveedor"
+          - name: true_total_amt
+            description: "Total calculado sumando todos los componentes"
+          - name: comparation_total_amt
+            description: "TRUE si total_amt y true_total_amt difieren menos de $0.01"
+          - name: surcharge
+            description: "Improvement surcharge ($0.30)"
+          - name: mta_tax
+            description: "Impuesto MTA ($0.50)"
+          - name: congestion_surcharge
+            description: "Cargo por congestión"
+          - name: airport_fee
+            description: "Cargo de aeropuerto (JFK/LaGuardia)"
+          - name: cbd_congestion_fee
+            description: "Cargo por congestión CBD (desde 2025)"
+          - name: anio
+            description: "Año del viaje"
+          - name: mes
+            description: "Mes del viaje"
