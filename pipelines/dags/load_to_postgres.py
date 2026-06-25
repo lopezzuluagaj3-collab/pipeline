@@ -27,21 +27,21 @@ DBT_BASE = (
     "2>&1"
 )
 
-
 def _get_config():
-    load_dotenv()
+    from urllib.parse import urlparse
+    conn_str = os.environ["AIRFLOW_CONN_MY_POSTGRES_DB"]
+    parsed = urlparse(conn_str)
     return {
         "bucket":     os.environ["S3_BUCKET"],
-        "aws_region": os.environ.get("AWS_REGION", "us-east-2"),
+        "aws_region": os.environ.get("AWS_DEFAULT_REGION", "us-east-2"),
         "pg_conn": {
-            "host":     os.environ["PG_HOST"],
-            "port":     int(os.environ.get("PG_PORT", 5432)),
-            "dbname":   os.environ["PG_DBNAME"],
-            "user":     os.environ["PG_USER"],
-            "password": os.environ["PG_PASSWORD"],
+            "host":     parsed.hostname,
+            "port":     parsed.port or 5432,
+            "dbname":   parsed.path.lstrip("/"),
+            "user":     parsed.username,
+            "password": parsed.password,
         }
     }
-
 def _cargar_formato(formato: str):
     config = _get_config()
     sys.path.insert(0, LOADER_PATH)
