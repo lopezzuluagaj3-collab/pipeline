@@ -51,6 +51,23 @@ models:
           - intermediate
 
     # -----------------------------------------------------------------------
+    # Marts – Vistas materializadas para consumo en Power BI
+    # -----------------------------------------------------------------------
+    marts:
+      fhv:
+        +materialized: materialized_view
+        +schema: fhv_marts
+        +tags:
+          - fhv
+          - marts
+      fhvhv:
+        +materialized: materialized_view
+        +schema: fhvhv_marts
+        +tags:
+          - fhvhv
+          - marts
+
+    # -----------------------------------------------------------------------
     # Warehouse – Corre en Postgres, tablas finales de reporting
     # -----------------------------------------------------------------------
     warehouse:
