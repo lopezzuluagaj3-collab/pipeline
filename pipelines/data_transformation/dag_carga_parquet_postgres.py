@@ -4,6 +4,7 @@ from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timezone
 import sys
+import os
 
 
 BUCKET     = "sirius-logs-riwi"
@@ -19,10 +20,10 @@ PG_CONN = {
 
 # Mapeo: nombre → (prefix en S3, tabla destino en Postgres)
 FORMATOS = {
-    "fhv":    ("tlc/staging/fhv/",    "raw.formato_1"),
-    "hvfhs":  ("tlc/staging/hvfhv/",  "raw.formato_2"),
-    "green":  ("tlc/staging/green/",  "raw.formato_3"),
-    "yellow": ("tlc/staging/yellow/", "raw.formato_4"),
+    "fhv":    ("tlc/staging/fhv/",    "staging.fhv"),
+    "hvfhs":  ("tlc/staging/hvfhs/",  "staging.hvfhs"),
+    "green":  ("tlc/staging/green/",  "staging.green"),
+    "yellow": ("tlc/staging/yellow/", "staging.yellow"),
 }
 
 # Argumentos comunes para todos los comandos dbt
@@ -39,7 +40,7 @@ LOADER_PATH = "/opt/airflow/dags/current/pipelines/scripts/s3_to_postgres_loader
 
 
 def _cargar_formato(formato: str):
-    sys.path.insert(0, LOADER_PATH)
+    sys.path.insert(0, os.path.dirname(LOADER_PATH))
     from s3_to_postgres_loader import cargar_formato
     prefix, tabla = FORMATOS[formato]
     cargar_formato(

@@ -2,9 +2,9 @@ version: 2
 
 sources:
   - name: raw
-    schema: raw
+    schema: staging
     tables:
-      - name: formato_1
+      - name: fhv
         description: "Datos FHV (For-Hire Vehicle) con staging aplicado"
         columns:
           - name: dispatching_base_num

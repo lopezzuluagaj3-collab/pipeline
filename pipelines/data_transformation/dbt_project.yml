@@ -30,22 +30,22 @@ models:
     intermediate:
       +materialized: table
       fhv:
-        +schema: fhv_intermediate
+        +schema: intermediate
         +tags:
           - fhv
           - intermediate
       hvfhs:
-        +schema: hvfhs_intermediate
+        +schema: intermediate
         +tags:
           - hvfhs
           - intermediate
       green:
-        +schema: green_intermediate
+        +schema: intermediate
         +tags:
           - green
           - intermediate
       yellow:
-        +schema: yellow_intermediate
+        +schema: intermediate
         +tags:
           - yellow
           - intermediate

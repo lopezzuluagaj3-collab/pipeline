@@ -3,9 +3,9 @@ version: 2
 sources:
   - name: raw
     description: "Tablas cargadas desde S3 staging a Postgres"
-    schema: raw
+    schema: staging
     tables:
-      - name: formato_3
+      - name: green
         description: "Datos green taxi con staging aplicado (limpieza, tipado, outliers)"
         columns:
           - name: vendor_id

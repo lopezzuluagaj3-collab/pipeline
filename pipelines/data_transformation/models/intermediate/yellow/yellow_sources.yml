@@ -2,9 +2,9 @@ version: 2
 
 sources:
   - name: raw
-    schema: raw
+    schema: staging
     tables:
-      - name: formato_4
+      - name: yellow
         description: "Datos Yellow Taxi con staging aplicado (2009-2026, normalización histórica incluida)"
         columns:
           - name: vendor_id
