@@ -16,9 +16,43 @@ clean-targets:
 
 models:
   data_transformation:
+
+    # -----------------------------------------------------------------------
+    # Staging – Corre en Spark, escribe parquet en S3
+    # -----------------------------------------------------------------------
     staging:
       +materialized: table
       +file_format: parquet
+
+    # -----------------------------------------------------------------------
+    # Intermediate – Corre en Postgres, construye esquema estrella
+    # -----------------------------------------------------------------------
+    intermediate:
+      +materialized: table
+      fhv:
+        +schema: fhv_intermediate
+        +tags:
+          - fhv
+          - intermediate
+      hvfhs:
+        +schema: hvfhs_intermediate
+        +tags:
+          - hvfhs
+          - intermediate
+      green:
+        +schema: green_intermediate
+        +tags:
+          - green
+          - intermediate
+      yellow:
+        +schema: yellow_intermediate
+        +tags:
+          - yellow
+          - intermediate
+
+    # -----------------------------------------------------------------------
+    # Warehouse – Corre en Postgres, tablas finales de reporting
+    # -----------------------------------------------------------------------
     warehouse:
       fhv:
         +schema: fhv_model

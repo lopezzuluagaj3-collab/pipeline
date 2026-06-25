@@ -1,0 +1,83 @@
+version: 2
+
+sources:
+  - name: staging
+    description: "Tablas cargadas desde el pipeline de Spark a PostgreSQL (esquema staging de sirius_cas_7)."
+    schema: staging
+    database: sirius_cas_7
+    tables:
+      - name: fhv
+        description: "Viajes de For-Hire Vehicles (FHV) procesados en la capa staging."
+        columns:
+          - name: dispatching_base_num
+            description: "Número de licencia TLC de la base que despachó el viaje."
+          - name: affiliated_base_number
+            description: "Número de base con la que está afiliado el vehículo."
+          - name: tpep_pickup_datetime
+            description: "Fecha y hora de recogida del pasajero."
+          - name: tpep_dropoff_datetime
+            description: "Fecha y hora de llegada al destino."
+          - name: anio
+            description: "Año de la partición."
+          - name: mes
+            description: "Mes de la partición."
+
+      - name: hvfhs
+        description: "Viajes de High Volume For-Hire Services (HVFHS) procesados en staging."
+        columns:
+          - name: hvfhs_license_num
+            description: "Número de licencia TLC del operador HVFHS (HV0002=Juno, HV0003=Uber, HV0004=Via, HV0005=Lyft)."
+          - name: dispatching_base_num
+            description: "Número de licencia TLC de la base despachante."
+          - name: request_datetime
+            description: "Fecha/hora en que el pasajero solicitó el viaje."
+          - name: on_scene_datetime
+            description: "Fecha/hora en que el conductor llegó al punto de recogida."
+          - name: tpep_pickup_datetime
+            description: "Fecha y hora de recogida del pasajero."
+          - name: tpep_dropoff_datetime
+            description: "Fecha y hora de llegada al destino."
+          - name: pu_location_id
+            description: "ID de zona TLC donde inició el viaje."
+          - name: do_location_id
+            description: "ID de zona TLC donde finalizó el viaje."
+          - name: trip_distance
+            description: "Distancia total del viaje en millas."
+          - name: trip_time
+            description: "Duración total del viaje en segundos."
+          - name: fare_amount
+            description: "Tarifa base del viaje."
+          - name: tolls_amt
+            description: "Total de peajes pagados."
+          - name: bcf
+            description: "Monto Black Car Fund."
+          - name: sales_tax
+            description: "Impuesto de ventas NYS."
+          - name: congestion_surcharge
+            description: "Cargo por congestión NYS."
+          - name: airport_fee
+            description: "Cargo aeroportuario (LaGuardia, Newark, JFK)."
+          - name: tip_amt
+            description: "Propina recibida."
+          - name: total_amt
+            description: "Monto total cobrado al pasajero."
+          - name: shared_request_flag
+            description: "El pasajero aceptó un viaje compartido (Y/N)."
+          - name: shared_match_flag
+            description: "El viaje fue efectivamente compartido con otro pasajero (Y/N)."
+          - name: access_a_ride_flag
+            description: "Viaje administrado en nombre de la MTA (Y/N)."
+          - name: wav_request_flag
+            description: "El pasajero solicitó vehículo accesible en silla de ruedas (Y/N)."
+          - name: wav_match_flag
+            description: "El viaje ocurrió en un vehículo accesible en silla de ruedas (Y/N)."
+          - name: cbd_congestion_fee
+            description: "Cargo por zona de alivio de congestión MTA (desde Jan 5, 2025)."
+          - name: true_total_amt
+            description: "Total calculado a partir de los componentes individuales."
+          - name: comparation_total_amt
+            description: "Indicador de concordancia entre total_amt y true_total_amt."
+          - name: anio
+            description: "Año de la partición."
+          - name: mes
+            description: "Mes de la partición."
