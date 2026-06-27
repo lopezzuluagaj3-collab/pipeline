@@ -1,0 +1,21 @@
+services:
+  spark-worker:
+    image: apache/spark:3.5.1
+    container_name: spark-worker
+    user: root
+    network_mode: host
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker
+      --webui-port 8082
+      --memory 3g
+      --cores 2
+      spark://ip:7077
+    environment:
+      - SPARK_NO_DAEMONIZE=true
+      - SPARK_LOCAL_IP=ip_worker
+      - SPARK_PUBLIC_DNS=ip_worker
+    volumes:
+      - /home/ubuntu/spark-apps:/opt/spark-apps
+      - /home/ubuntu/spark-worker/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar
+      - /home/ubuntu/spark-worker/jars/aws-java-sdk-bundle-1.12.262.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+    restart: unless-stopped

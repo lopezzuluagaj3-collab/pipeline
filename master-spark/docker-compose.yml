@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  spark-master:
+    image: apache/spark:3.5.1
+    container_name: spark-master
+    user: root
+    network_mode: host
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+      --host 12.0.1.82
+      --port 7077
+      --webui-port 8080
+    environment:
+      - SPARK_NO_DAEMONIZE=true
+      - SPARK_LOCAL_IP=ip_instance
+      - SPARK_PUBLIC_DNS=ip_instance
+    volumes:
+      - /home/ubuntu/spark-apps:/opt/spark-apps
+    restart: unless-stopped
+
+  thrift-server:
+    image: apache/spark:3.5.1
+    container_name: spark-thrift
+    user: root
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - SPARK_NO_DAEMONIZE=true
+    command: >
+      /opt/spark/bin/spark-submit
+      --master spark://12.0.1.82:7077
+      --class org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
+      --name "Thrift JDBC/ODBC Server"
+      --driver-class-path /opt/spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      --conf spark.driver.extraClassPath=/opt/spark/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      --hiveconf hive.server2.thrift.port=10000
+      --hiveconf hive.server2.thrift.bind.host=0.0.0.0
+      --hiveconf hive.server2.authentication=NOSASL
+      --hiveconf hive.server2.transport.mode=binary
+      --hiveconf hive.server2.idle.session.timeout=0
+      --hiveconf hive.server2.idle.operation.timeout=0
+      --hiveconf hive.server2.session.check.interval=0
+      --hiveconf hive.server2.async.exec.keepalive.time=3600
+      --hiveconf hive.server2.async.exec.threads=50
+      --hiveconf hive.server2.long.polling.timeout=5000
+      --conf spark.network.timeout=800s
+      --conf spark.executor.heartbeatInterval=60s
+      --conf spark.sql.thriftServer.interruptOnCancel=false
+      --conf spark.sql.warehouse.dir=${SPARK_WAREHOUSE_DIR}
+      --conf spark.hadoop.fs.s3a.access.key=${AWS_ACCESS_KEY_ID}
+      --conf spark.hadoop.fs.s3a.secret.key=${AWS_SECRET_ACCESS_KEY}
+      --conf spark.hadoop.fs.s3a.endpoint=s3.us-east-2.amazonaws.com
+      --conf spark.hadoop.fs.s3a.endpoint.region=us-east-2
+      --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem
+      --conf spark.executor.memory=3g
+      --conf spark.executor.memoryOverhead=384m
+      --conf spark.sql.shuffle.partitions=28
+      --conf spark.executor.cores=2
+      --conf spark.driver.memory=${SPARK_DRIVER_MEMORY}
+      --conf spark.driver.bindAddress=0.0.0.0
+      --conf spark.driver.host=12.0.1.82
+      --conf spark.jars=/opt/spark/jars/hadoop-aws-3.3.4.jar,/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      spark-internal
+    volumes:
+      - /home/ubuntu/spark-master/jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar
+      - /home/ubuntu/spark-master/jars/aws-java-sdk-bundle-1.12.262.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar
+      - /home/ubuntu/spark-apps:/opt/spark-apps
+    depends_on:
+      - spark-master
+    restart: unless-stopped

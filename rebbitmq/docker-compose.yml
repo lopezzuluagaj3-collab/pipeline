@@ -2,21 +2,18 @@ version: '3.8'
 
 services:
   rabbitmq:
-    image: rabbitmq:3.12-management
-    container_name: rabbitmq_server
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"     # Puerto AMQP
+      - "15672:15672"   # UI de administración
     environment:
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit consumer_timeout undefined"
       RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin  
+      RABBITMQ_DEFAULT_PASS: admin123
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-    restart: always
 
 volumes:
   rabbitmq_data:
-
-
-
-
